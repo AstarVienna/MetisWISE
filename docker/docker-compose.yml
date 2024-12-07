@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: postgres:latest
+    environment:
+      - "POSTGRES_DB=wise"
+      - "POSTGRES_USER=system"
+      - "POSTGRES_PASSWORD=klmn"
+    volumes:
+      - metiswisetestdb:/var/lib/postgresql/data
+  metiswise:
+    image: metiswise:latest
+    tty: true
+    volumes:
+      # TODO: Remove hugo-dependent volumes
+      - type: bind
+        source: ../
+        target: /home/micado/micadowise
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - /mnt/data/hugo/repos:/repos
+      - /mnt/data/hugo_bulk/scratch:/scratch
+      - /home/hugo/.Xauthority:/home/user/.Xauthority
+      #- "${XAUTHORITY:-$HOME/.Xauthority}:/home/user/.Xauthority:ro"
+    ports:
+      - "127.0.0.1:8888:8888" # jupyter
+    environment:
+      - DISPLAY=${DISPLAY}
+    #entrypoint: /home/user/metiswise/docker/bin/entrypoint_notebook.sh
+volumes:
+  metiswisetestdb:
