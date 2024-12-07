@@ -2,6 +2,7 @@
 #
 # docker run  -it --network=host --volume="/mnt/data/hugo/scratch:/scratch" --volume="/mnt/data/hugo/repos:/repos" --volume="${XAUTHORITY:-$HOME/.Xauthority}:/home/user/.Xauthority:ro"   --env DISPLAY="${DISPLAY}" metiswise
 
+# TODO: Update Python version
 # 23.10.0-1 is the last one with Python 3.11
 FROM continuumio/miniconda3:23.10.0-1
 

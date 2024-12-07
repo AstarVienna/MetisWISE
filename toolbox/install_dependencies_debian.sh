@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# https://betterdev.blog/minimal-safe-bash-script-template/
+set -Eeuo pipefail
+
+
 apt-get update
 apt-get upgrade -y
 conda update -y -n base -c defaults conda
@@ -11,12 +15,9 @@ conda update -y -n base -c defaults conda
 apt-get install -y file less emacs curl vim man-db meld tmux apt-file x11-apps
 apt-file update
 
+conda config --add channels defaults
 conda config --add channels conda-forge
 conda config --add channels omegacen
+
 # TODO: set credentials
 conda config --add channels "https://${OMEGACEN_CONDA_CREDENTIALS}@conda.astro-wise.org/"
-
-# conda is not able to resolve all the dependencies of MicadoWISE, but the
-# drop-in replacement mamba is. boa provides mambabuild, the equivalent of
-# conda build.
-conda install -y mamba boa
