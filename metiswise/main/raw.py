@@ -171,7 +171,7 @@ try:
     LM_IMAGE_SCI_RAW = Raw.class_from_dpr[('SCIENCE', 'IMAGE,LM', 'OBJECT')]
     LM_IMAGE_STD_RAW = Raw.class_from_dpr[('CALIB', 'IMAGE,LM', 'STD')]
     N_IMAGE_SCI_RAW = Raw.class_from_dpr[('SCIENCE', 'IMAGE,N', 'OBJECT')]
-    N_IMAGE_STD_RAW = Raw.class_from_dpr[('CALIB', 'IMAGE,N', 'OBJECT')]
+    N_IMAGE_STD_RAW = Raw.class_from_dpr[('CALIB', 'IMAGE,N', 'STD')]
     LM_CHOPPERHOME_RAW = Raw.class_from_dpr[('CALIB', 'IMAGE,LM', 'CHOPHOME')]
     DETLIN_2RG_RAW = Raw.class_from_dpr[('CALIB', 'IMAGE,LM', 'DETLIN')]
     DETLIN_GEO_RAW = Raw.class_from_dpr[('CALIB', 'IMAGE,N', 'DETLIN')]
@@ -206,6 +206,7 @@ try:
     N_OFF_AXIS_PSF_RAW = Raw.class_from_dpr[('CALIB', 'IMAGE,N', 'PSF,OFFAXIS')]
     IFU_OFF_AXIS_PSF_RAW = Raw.class_from_dpr[('CALIB', 'IFU', 'PSF,OFFAXIS')]
     IFU_SKY_RAW = Raw.class_from_dpr[('SCIENCE', 'IFU', 'SKY')]
+    LM_IMAGE_SCI_RAW = Raw.class_from_dpr[('SCIENCE', 'IMG_LM', 'OBJECT')]
 except KeyError as e:
     print("Error importing Raw classes:")
     print(e)
