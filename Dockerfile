@@ -19,12 +19,29 @@ ENV HOME /home/${NB_USER}
 RUN adduser --uid ${NB_UID} ${NB_USER}
 RUN chown -R ${NB_UID} ${HOME}
 
-# Copy over the repository.
+# See install_dependencies_debian.sh for these commands.
+# They are repeated here to allow docker to cache layers.
+RUN apt-get update; \
+    apt-get upgrade -y; \
+    apt-get install -y file less emacs curl vim man-db meld tmux apt-file x11-apps inetutils-ping; \
+    apt-file update;
+
+# TODO: set credentials
+RUN conda update -y -n base -c defaults conda; \
+    conda config --add channels defaults; \
+    conda config --add channels conda-forge; \
+    conda config --add channels omegacen; \
+    conda config --add channels "https://${OMEGACEN_CONDA_CREDENTIALS}@conda.astro-wise.org/" \
+    conda install -y --solver=classic conda-forge::conda-libmamba-solver conda-forge::libmamba conda-forge::libmambapy conda-forge::libarchive; \
+    conda install -y common psycopg2 astropy pytest jupyter httpcore lxml httpx docutils pooch scipy;
+
+# Copy over the repository. This breaks the caching.
 COPY . ${HOME}/MetisWISE
 
 # Install
-RUN bash -l ${HOME}/MetisWISE/toolbox/install_dependencies_debian.sh
+#RUN bash -l ${HOME}/MetisWISE/toolbox/install_dependencies_debian.sh
 
+# TODO: Enable NB_USER again
 #USER ${NB_USER}
 
 RUN bash -l ${HOME}/MetisWISE/toolbox/install_run_as_user.sh

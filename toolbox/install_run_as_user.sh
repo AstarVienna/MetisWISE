@@ -3,23 +3,28 @@
 # https://betterdev.blog/minimal-safe-bash-script-template/
 set -Eeuo pipefail
 
-conda config --add channels defaults
-conda config --add channels conda-forge
-conda config --add channels omegacen
-
+# TODO: Make sure it isn't a problem when commands from the Dockerfile are repeated
+#conda config --add channels defaults
+#conda config --add channels conda-forge
+#conda config --add channels omegacen
 # TODO: set credentials
-conda config --add channels "https://${OMEGACEN_CONDA_CREDENTIALS}@conda.astro-wise.org/"
+#conda config --add channels "https://${OMEGACEN_CONDA_CREDENTIALS}@conda.astro-wise.org/"
+#
+## TODO: Activate environment, now everything must be done as root.
+##conda create -n metiswise
+##conda activate metiswise
+#
+## https://stackoverflow.com/a/78293971
+#conda install -y --solver=classic conda-forge::conda-libmamba-solver conda-forge::libmamba conda-forge::libmambapy conda-forge::libarchive
+#
+## Install dependencies
+## psycopg2 for PostgreSQL connection
+#conda install -y common psycopg2 astropy pytest jupyter httpcore lxml httpx docutils pooch scipy
 
-# TODO: Activate environment, now everything must be done as root.
-#conda create -n metiswise
-#conda activate metiswise
+# TODO: use a conda environment
+conda activate base
 
-# https://stackoverflow.com/a/78293971
-conda install -y --solver=classic conda-forge::conda-libmamba-solver conda-forge::libmamba conda-forge::libmambapy conda-forge::libarchive
-
-# Install dependencies
-# psycopg2 for PostgreSQL connection
-conda install -y common psycopg2 astropy pytest jupyter httpcore lxml httpx docutils pooch scipy
+cd "${HOME}"
 
 git clone https://github.com/AstarVienna/ScopeSim.git
 pushd ScopeSim
@@ -55,4 +60,5 @@ git clone https://github.com/AstarVienna/irdb.git
 #popd
 
 echo "export AWETARGET=metiswise" >> "${HOME}/.bashrc"
+echo 'eval "$(conda shell.bash hook)"' >> "${HOME}/.bashrc"
 echo "conda activate base" >> "${HOME}/.bashrc"
