@@ -1,0 +1,54 @@
+# Byte-compiled files
+__pycache__/
+*.py[cod]
+
+
+# Distribution / packaging
+.Python
+git-ignored/
+build/
+develop-eggs/
+dist/
+eggs/
+.eggs/
+*.egg-info/
+*.egg
+MANIFEST
+
+
+# win/mac stuff
+.DS_Store
+
+
+# emacs backup files
+*~
+
+
+# Documentation etc: Sphinx and ReadTheDocs
+reference/
+effects_docstrings/
+*.ipynb_checkpoints
+
+
+# other stuff
+stable_dists
+old
+data_backup
+.cache
+.pytest_cache/
+.idea/
+*.log
+*.zip
+data_ext
+dist
+
+
+# specific files
+*inst_pkgs/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Pylint
+.pylint.d/
