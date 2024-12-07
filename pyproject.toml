@@ -1,0 +1,25 @@
+[project]
+name = "MetisWISE"
+version = "0.0.1-alpha"
+description = "MetisWISE"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+    {name = "Hugo Buddelmeijer", email="hugo@buddelmeijer.nl"},
+]
+maintainers = [
+    {name = "Hugo Buddelmeijer", email="hugo@buddelmeijer.nl"},
+]
+classifiers=[
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Astronomy",
+]
+dependencies = []
+
+[project.urls]
+"Source" = "https://github.com/AstarVienna/MetisWISE"
+
+[tool.setuptools.packages]
+find = {}
