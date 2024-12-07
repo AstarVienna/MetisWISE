@@ -14,12 +14,12 @@ services:
       # TODO: Remove hugo-dependent volumes
       - type: bind
         source: ../
-        target: /home/micado/micadowise
+        target: /home/metis/metiswise
       - /tmp/.X11-unix:/tmp/.X11-unix
       - /mnt/data/hugo/repos:/repos
       - /mnt/data/hugo_bulk/scratch:/scratch
-      - /home/hugo/.Xauthority:/home/user/.Xauthority
-      #- "${XAUTHORITY:-$HOME/.Xauthority}:/home/user/.Xauthority:ro"
+      - /home/hugo/.Xauthority:/home/metis/.Xauthority
+      #- "${XAUTHORITY:-$HOME/.Xauthority}:/home/metis/.Xauthority:ro"
     ports:
       - "127.0.0.1:8888:8888" # jupyter
     environment:

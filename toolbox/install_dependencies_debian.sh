@@ -14,10 +14,3 @@ conda update -y -n base -c defaults conda
 # curl is necessary to download some files. The rest is just useful.
 apt-get install -y file less emacs curl vim man-db meld tmux apt-file x11-apps
 apt-file update
-
-conda config --add channels defaults
-conda config --add channels conda-forge
-conda config --add channels omegacen
-
-# TODO: set credentials
-conda config --add channels "https://${OMEGACEN_CONDA_CREDENTIALS}@conda.astro-wise.org/"
