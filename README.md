@@ -26,3 +26,29 @@ conda create -n metiswise common psycopg2 astropy pytest jupyter httpcore lxml h
 ```
 
 See the Dockerfile for more instructions.
+
+Docker
+------
+
+The easiest way to experiment with MetisWISE is through Docker.
+This method creates a local database instance (PostgreSQL) to experiment with.
+
+First install docker and docker-compose through your favorite mechanism.
+
+```bash
+docker build -t metiswise .
+cd docker
+docker-compose up
+```
+
+This should give you a link to a Jupyter Notebook that you can open.
+
+Docker compose will start a database instance and a MetisWISE instance.
+
+You can connect to the docker container through
+```bash
+docker exec -ti metiswise_1 bash
+```
+
+
+
