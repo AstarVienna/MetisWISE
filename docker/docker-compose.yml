@@ -1,3 +1,4 @@
+version: "3.8"
 services:
   postgres:
     image: postgres:latest
@@ -7,6 +8,7 @@ services:
       - "POSTGRES_PASSWORD=klmn"
     volumes:
       - metiswisetestdb:/var/lib/postgresql/data
+#    network_mode: "host"
   metiswise:
     image: metiswise:latest
     tty: true
@@ -22,19 +24,20 @@ services:
       #- "${XAUTHORITY:-$HOME/.Xauthority}:/home/metis/.Xauthority:ro"
     environment:
       - DISPLAY=${DISPLAY}
+    network_mode: "host"
   dbviewer:
     image: metiswise:latest
     tty: true
     volumes:
       - type: bind
         source: ../
-        # TODO: Does this volume actually work?
         target: /home/metis/MetisWISE
     ports:
       - "127.0.0.1:8080:8080" # dbviewer
     environment:
       - DISPLAY=${DISPLAY}
     entrypoint: /home/metis/MetisWISE/docker/entrypoint_dbview.sh
+#    network_mode: "host"
   jupyter:
     image: metiswise:latest
     tty: true
@@ -45,5 +48,6 @@ services:
     ports:
       - "127.0.0.1:8888:8888" # jupyter
     entrypoint: /home/metis/MetisWISE/docker/entrypoint_notebook.sh
+#    network_mode: "host"
 volumes:
   metiswisetestdb:
