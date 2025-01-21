@@ -1,6 +1,13 @@
-# docker build -t metiswise .
+# Usage:
 #
-# docker run  -it --network=host --volume="/mnt/data/hugo/scratch:/scratch" --volume="/mnt/data/hugo/repos:/repos" --volume="${XAUTHORITY:-$HOME/.Xauthority}:/home/metis/.Xauthority:ro"   --env DISPLAY="${DISPLAY}" metiswise
+# 1) Get OMEGACEN_CONDA_CREDENTIALS from https://metis.strw.leidenuniv.nl/wiki/doku.php?id=ait:archive
+# export OMEGACEN_CONDA_CREDENTIALS=username:password
+#
+# 2) Build the image
+# DOCKER_BUILDKIT=1 docker build --secret id=OMEGACEN_CONDA_CREDENTIALS,env=OMEGACEN_CONDA_CREDENTIALS -t metiswise .
+#
+# 3) Run the image
+# docker run  -it --network=host --volume="/:/hostroot" --volume="${XAUTHORITY:-$HOME/.Xauthority}:/home/metis/.Xauthority:ro"   --env DISPLAY="${DISPLAY}" metiswise
 
 # TODO: Update Python version
 # 23.10.0-1 is the last one with Python 3.11
@@ -21,17 +28,18 @@ RUN chown -R ${NB_UID} ${HOME}
 
 # See install_dependencies_debian.sh for these commands.
 # They are repeated here to allow docker to cache layers.
-RUN apt-get update; \
+RUN \
+    apt-get update; \
     apt-get upgrade -y; \
     apt-get install -y file less emacs curl vim man-db meld tmux apt-file x11-apps inetutils-ping; \
     apt-file update;
 
-# TODO: set credentials
-RUN conda update -y -n base -c defaults conda; \
+RUN --mount=type=secret,id=OMEGACEN_CONDA_CREDENTIALS \
+    conda update -y -n base -c defaults conda; \
     conda config --add channels defaults; \
     conda config --add channels conda-forge; \
     conda config --add channels omegacen; \
-    conda config --add channels "https://${OMEGACEN_CONDA_CREDENTIALS}@conda.astro-wise.org/" \
+    conda config --add channels "https://$(cat /run/secrets/OMEGACEN_CONDA_CREDENTIALS)@conda.astro-wise.org/"; \
     conda install -y --solver=classic conda-forge::conda-libmamba-solver conda-forge::libmamba conda-forge::libmambapy conda-forge::libarchive; \
     conda install -y common psycopg2 astropy pytest jupyter httpcore lxml httpx docutils pooch scipy;
 

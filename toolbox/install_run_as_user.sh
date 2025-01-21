@@ -53,11 +53,11 @@ popd
 
 git clone https://github.com/AstarVienna/irdb.git
 
-# TODO: Enable once MetisWISE is public
+# TODO: check whether directory already exists.
 #git clone https://github.com/AstarVienna/MetisWISE.git
-#pushd MetisWISE
-#pip install -e .
-#popd
+pushd MetisWISE
+pip install -e .
+popd
 
 echo "export AWETARGET=metiswise" >> "${HOME}/.bashrc"
 echo 'eval "$(conda shell.bash hook)"' >> "${HOME}/.bashrc"
