@@ -64,10 +64,24 @@ The last link, linking to `127.0.0.1:8888` should work, as the port is forwarded
 
 The dbviewer is visible at http://127.0.0.1:8080/DbView.
 
+Setting up the database
+-----------------------
+
+The database should be setup so it has a schema.
+
 You can connect to the metiswise container through
 ```bash
 docker exec -ti docker_metiswise_1 bash
 ```
+
+Run these commands in the container.
+They only have to be ran once, because the database is stored in a docker-volume, so it persists.
+```
+source "${HOME}/.bashrc"
+source "${HOME}/MetisWISE/toolbox/become_system_user.sh"
+python "${HOME}/MetisWISE/metiswise/tools/dbtestsetup.py"
+```
+
 
 MetisWISE in Python
 ===================

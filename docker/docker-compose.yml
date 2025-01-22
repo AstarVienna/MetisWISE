@@ -24,7 +24,7 @@ services:
       #- "${XAUTHORITY:-$HOME/.Xauthority}:/home/metis/.Xauthority:ro"
     environment:
       - DISPLAY=${DISPLAY}
-    network_mode: "host"
+#    network_mode: "host"
   dbviewer:
     image: metiswise:latest
     tty: true
