@@ -15,6 +15,20 @@ FROM docker.io/continuumio/miniconda3:23.10.0-1
 
 MAINTAINER Hugo Buddelmeijer <hugo@buddelmeijer.nl>
 
+# Run-time dependencies:
+# -
+#
+# Build dependencies:
+# - conda-build
+#
+# Development dependencies:
+# -
+#
+# Optional dependencies for convenience:
+# - x11-apps: for xclock to test X11 connection
+# - emacs: to use as EDITOR
+# - file less curl vim man-db meld tmux apt-file inetutils-ping
+
 # See install_dependencies_debian.sh for these commands.
 # They are repeated here to allow docker to cache layers.
 RUN \
@@ -30,7 +44,7 @@ RUN --mount=type=secret,id=OMEGACEN_CONDA_CREDENTIALS \
     conda config --add channels omegacen; \
     conda config --add channels "https://$(cat /run/secrets/OMEGACEN_CONDA_CREDENTIALS)@conda.astro-wise.org/"; \
     conda install -y --solver=classic conda-forge::conda-libmamba-solver conda-forge::libmamba conda-forge::libmambapy conda-forge::libarchive; \
-    conda install -y common psycopg2 astropy pytest jupyter httpcore lxml httpx docutils pooch scipy;
+    conda install -y common psycopg2 astropy pytest jupyter httpcore lxml httpx docutils pooch scipy conda-build;
 
 RUN pip install \
     ScopeSim \
