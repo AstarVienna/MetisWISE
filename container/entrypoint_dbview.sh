@@ -6,7 +6,7 @@ conda activate base
 export AWETARGET=metiswise
 # TODO: Move to src directory?
 export PYTHONPATH="${HOME}/MetisWISE"
-/home/metis/MetisWISE/toolbox/dbview.sh start
+"${HOME}/MetisWISE/toolbox/dbview.sh" start
 
 echo "Sleep"
 sleep 10
