@@ -2,11 +2,9 @@
 """Ingest a raw fits file."""
 
 import sys
-from pathlib import Path
-
-from astropy.io import fits
-
 from metiswise.main.raw import *
+from common.database.ClassCache import classcache
+
 
 def ingest_file(filename: str):
     print()
@@ -20,21 +18,24 @@ def ingest_file(filename: str):
     
     return myraw
 
-def help():
-    print(f"{argv[0]} <raw_file.fits>")
 
-#def main():
-if __name__ == '__main__':
-    if len(sys.argv) < 1:
-        help()
+def show_help():
+    print(f"{sys.argv[0]} <raw_file.fits>")
 
-    #filename = sys.argv[1]
+
+def main():
+    if len(sys.argv) == 1:
+        show_help()
+
     for filename in sys.argv[1:]:
         myraw = ingest_file(filename)
         myraw.commit()
 
-
     print()
     for aclass in classcache.values():
-        theclass = aclass.aclass
-        print(theclass.__name__, len(theclass.select_all()))
+        actualclass = aclass.aclass
+        print(actualclass.__name__, len(actualclass.select_all()))
+
+
+if __name__ == "__main__":
+    main()
