@@ -52,7 +52,7 @@ RUN pip install \
     git+https://github.com/AstarVienna/ScopeSim_Data.git
 
 # Copy over the repository. This breaks the caching.
-COPY . ${HOME}/MetisWISE
+COPY . /root/MetisWISE
 
 # Install
 #RUN bash -l ${HOME}/MetisWISE/toolbox/install_dependencies_debian.sh
@@ -60,4 +60,4 @@ COPY . ${HOME}/MetisWISE
 # TODO: Enable NB_USER again
 #USER ${NB_USER}
 
-RUN bash -l ${HOME}/MetisWISE/toolbox/install_run_as_user.sh
+RUN bash -l /root/MetisWISE/toolbox/install_run_as_user.sh

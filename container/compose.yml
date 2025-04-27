@@ -16,11 +16,11 @@ services:
       # TODO: Remove hugo-dependent volumes
       - type: bind
         source: ../
-        target: /home/metis/metiswise
+        target: /root/metiswise
       - /tmp/.X11-unix:/tmp/.X11-unix
       - /mnt/data/hugo/repos:/repos
       - /mnt/data/hugo_bulk/scratch:/scratch
-      - /home/hugo/.Xauthority:/home/metis/.Xauthority
+      - /home/hugo/.Xauthority:/root/.Xauthority
       #- "${XAUTHORITY:-$HOME/.Xauthority}:/home/metis/.Xauthority:ro"
     environment:
       - DISPLAY=${DISPLAY}
@@ -31,12 +31,12 @@ services:
     volumes:
       - type: bind
         source: ../
-        target: /home/metis/MetisWISE
+        target: /root/MetisWISE
     ports:
       - "127.0.0.1:8080:8080" # dbviewer
     environment:
       - DISPLAY=${DISPLAY}
-    entrypoint: /home/metis/MetisWISE/container/entrypoint_dbview.sh
+    entrypoint: /root/MetisWISE/container/entrypoint_dbview.sh
 #    network_mode: "host"
   jupyter:
     image: metiswise:latest
@@ -44,10 +44,10 @@ services:
     volumes:
       - type: bind
         source: ../
-        target: /home/metis/metiswise
+        target: /root/metiswise
     ports:
       - "127.0.0.1:8888:8888" # jupyter
-    entrypoint: /home/metis/MetisWISE/container/entrypoint_notebook.sh
+    entrypoint: /root/MetisWISE/container/entrypoint_notebook.sh
 #    network_mode: "host"
 volumes:
   metiswisetestdb:

@@ -1,0 +1,8 @@
+echo "Becoming system user."
+export database_tablespacename="pg_default"
+export database_engine="postgresql"
+export database_port="5432"
+export database_name="postgres/wise"
+export database_user="AWTEST"
+export database_password="lmno"
+export ask_administrator_password=""

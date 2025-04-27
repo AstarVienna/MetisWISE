@@ -6,9 +6,10 @@ conda activate base
 export AWETARGET=metiswise
 # TODO: Move to src directory?
 export PYTHONPATH="${HOME}/MetisWISE"
-"${HOME}/MetisWISE/toolbox/dbview.sh" start
 
-echo "Sleep"
-sleep 10
-echo "Run another bash so the script won't quit"
-bash
+# Ensure the database is setup correctly.
+source "${HOME}/MetisWISE/toolbox/become_system_user.sh"
+python "${HOME}/metiswise/tools/dbtestsetup.py"
+
+# Become normal user again.
+source "${HOME}/MetisWISE/toolbox/become_normal_user.sh"
