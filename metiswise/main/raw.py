@@ -28,11 +28,14 @@ keys_to_ignore = {
 class Image:
     pass
 
+
 class Lss:
     pass
 
+
 class Ifu:
     pass
+
 
 class Pup:
     pass
@@ -45,7 +48,6 @@ class Raw(DataItem):
     det_dit = persistent("DET.DIT", float, 1.0)
     det_ndit = persistent("DET.NDIT", int, 1)
     drs_filter = persistent("DRS.FILTER", str, "")
-    
 
     # Collect the derived classes that correspond to a set of DPR keywords.
     class_from_dpr = {}
@@ -59,23 +61,23 @@ class Raw(DataItem):
             with fits.open(filename) as hdus:
                 header_primary = hdus[0].header
 
-            dpr_key = (
+            dpr_key_this = (
                 header_primary["ESO DPR CATG"],
                 header_primary["ESO DPR TECH"],
                 header_primary["ESO DPR TYPE"],
             )
-            if dpr_key in keys_to_ignore:
-                print(f"Cannot find {dpr_key} as anticipated; using Raw.")
-                theclass = Raw
+            if dpr_key_this in keys_to_ignore:
+                print(f"Cannot find {dpr_key_this} as anticipated; using Raw.")
+                thisclass = Raw
             else:
-                assert dpr_key in self.class_from_dpr, f"Cannot find {dpr_key}."
-                theclass = self.class_from_dpr[dpr_key]
-                print("Found", theclass)
-            self.__class__ = theclass
+                assert dpr_key_this in self.class_from_dpr, f"Cannot find {dpr_key_this}."
+                thisclass = self.class_from_dpr[dpr_key_this]
+                print("Found", thisclass)
+            self.__class__ = thisclass
             super().__init__(*args, **kwargs)
             self.filename = filename
-            for prop_name in theclass.get_persistent_properties():
-                prop = getattr(theclass, prop_name)
+            for prop_name in thisclass.get_persistent_properties():
+                prop = getattr(thisclass, prop_name)
                 # attrname_short_eso is e.g. "DPR.CATG"
                 attrname_short_eso = prop.__doc__
                 attrname_fits = f"ESO {attrname_short_eso}".replace(".", " ")
@@ -89,26 +91,34 @@ class Raw(DataItem):
 class RawLm(Raw):
     pass
 
+
 class RawLmImage(RawLm, Image):
     pass
+
 
 class RawLmLss(RawLm, Lss):
     pass
 
+
 class RawLmPup(RawLm, Pup):
     pass
+
 
 class RawN(Raw):
     pass
 
+
 class RawNImage(RawN, Image):
     pass
+
 
 class RawNLss(RawN, Lss):
     pass
 
+
 class RawNPup(RawN, Lss):
     pass
+
 
 class RawIfu(Raw, Ifu):
     pass
@@ -144,12 +154,12 @@ for name, di in drld.dataitems.items():
     assert dpr_key not in Raw.class_from_dpr
     Raw.class_from_dpr[dpr_key] = newclass
     setattr(current_module, newclass.__name__, newclass)
-    #print(current_module, newclass.__name__, newclass)
+    # print(current_module, newclass.__name__, newclass)
 
 
 correct_key_from_wrong_key = {
     ('SCIENCE', 'IFU', 'SKY'): ('CALIB', 'IFU', 'SKY'),
-   # ('SCIENCE', 'IMAGE,LM', 'SKY'): ('CALIB', 'IMAGE,LM', 'SKY'),
+    # ('SCIENCE', 'IMAGE,LM', 'SKY'): ('CALIB', 'IMAGE,LM', 'SKY'),
     ('SCIENCE', 'IMG_LM', 'OBJECT'): ('SCIENCE', 'IMAGE,LM', 'OBJECT'),
 }
 for badkey, goodkey in correct_key_from_wrong_key.items():
@@ -205,8 +215,6 @@ try:
     LM_OFF_AXIS_PSF_RAW = Raw.class_from_dpr[('CALIB', 'IMAGE,LM', 'PSF,OFFAXIS')]
     N_OFF_AXIS_PSF_RAW = Raw.class_from_dpr[('CALIB', 'IMAGE,N', 'PSF,OFFAXIS')]
     IFU_OFF_AXIS_PSF_RAW = Raw.class_from_dpr[('CALIB', 'IFU', 'PSF,OFFAXIS')]
-    IFU_SKY_RAW = Raw.class_from_dpr[('SCIENCE', 'IFU', 'SKY')]
-    LM_IMAGE_SCI_RAW = Raw.class_from_dpr[('SCIENCE', 'IMG_LM', 'OBJECT')]
 except KeyError as e:
     print("Error importing Raw classes:")
     print(e)
