@@ -36,7 +36,7 @@ services:
       - "127.0.0.1:8080:8080" # dbviewer
     environment:
       - DISPLAY=${DISPLAY}
-    entrypoint: /home/metis/MetisWISE/docker/entrypoint_dbview.sh
+    entrypoint: /home/metis/MetisWISE/container/entrypoint_dbview.sh
 #    network_mode: "host"
   jupyter:
     image: metiswise:latest
@@ -47,7 +47,7 @@ services:
         target: /home/metis/metiswise
     ports:
       - "127.0.0.1:8888:8888" # jupyter
-    entrypoint: /home/metis/MetisWISE/docker/entrypoint_notebook.sh
+    entrypoint: /home/metis/MetisWISE/container/entrypoint_notebook.sh
 #    network_mode: "host"
 volumes:
   metiswisetestdb:
