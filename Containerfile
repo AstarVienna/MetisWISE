@@ -30,7 +30,7 @@ MAINTAINER Hugo Buddelmeijer <hugo@buddelmeijer.nl>
 # - file less curl vim man-db meld tmux apt-file inetutils-ping
 
 # See install_dependencies_debian.sh for these commands.
-# They are repeated here to allow docker to cache layers.
+# They are repeated here to allow podman to cache layers.
 RUN \
     apt-get update; \
     apt-get upgrade -y; \

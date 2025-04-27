@@ -25,33 +25,34 @@ Create the metiswise environment
 conda create -n metiswise common psycopg2 astropy pytest jupyter httpcore lxml httpx docutils pooch scipy
 ```
 
-See the Dockerfile for more instructions.
+See the Containerfile for more instructions.
 
-Docker
+Podman
 ------
 
-The easiest way to experiment with MetisWISE is through Docker.
+The easiest way to experiment with MetisWISE is through podman.
+Docker should work similarly, but podman is recommended because docker is untested.
 This method creates a local database instance (PostgreSQL) to experiment with.
 
-First install docker and docker-compose through your favorite mechanism.
+First install podman and podman-compose through your favorite mechanism.
 
 Then perform these workarounds (TODO: fix these)
-- in `Dockerfile`, replace the `OMEGACEN_CONDA_CREDENTIALS` variable with the credentials from the wiki.
-- in `docker/docker-compose.yml`, replace directories refering to `hugo` wit the appropriate paths.
+- in `Containerfile`, replace the `OMEGACEN_CONDA_CREDENTIALS` variable with the credentials from the wiki.
+- in `container/compose.yml`, replace directories refering to `hugo` wit the appropriate paths.
 
 ```bash
-docker build -t metiswise .
-cd docker
-docker-compose up
+podman build -t metiswise .
+cd container
+podman-compose up
 ```
 
-Docker compose will start four instances, that you can see with `docker ps`:
-- docker_postgres_1, with the test database
-- docker_dbviewer_1, with the web-based database viewer
-- docker_jupyter_1, with a jupyter notebook server
-- docker_metiswise_1, with bindings so X11 can be used.
+Podman compose will start four instances, that you can see with `podman ps`:
+- podman_postgres_1, with the test database
+- podman_dbviewer_1, with the web-based database viewer
+- podman_jupyter_1, with a jupyter notebook server
+- podman_metiswise_1, with bindings so X11 can be used.
 
-docker-compose should give you a link to a Jupyter Notebook that you can open.
+podman-compose should give you a link to a Jupyter Notebook that you can open.
 That is, it should print something like
 ```python
 jupyter_1    |     To access the server, open this file in a browser:
@@ -60,7 +61,7 @@ jupyter_1    |     Or copy and paste one of these URLs:
 jupyter_1    |         http://26c6e4169c98:8888/tree?token=0123456789abcdef
 jupyter_1    |         http://127.0.0.1:8888/tree?token=0123456789abcdef
 ```
-The last link, linking to `127.0.0.1:8888` should work, as the port is forwarded in `docker-compose.yml`.
+The last link, linking to `127.0.0.1:8888` should work, as the port is forwarded in `compose.yml`.
 
 The dbviewer is visible at http://127.0.0.1:8080/DbView.
 
@@ -71,11 +72,11 @@ The database should be setup so it has a schema.
 
 You can connect to the metiswise container through
 ```bash
-docker exec -ti docker_metiswise_1 bash
+podman exec -ti podman_metiswise_1 bash
 ```
 
 Run these commands in the container.
-They only have to be ran once, because the database is stored in a docker-volume, so it persists.
+They only have to be ran once, because the database is stored in a volume, so it persists.
 ```
 source "${HOME}/.bashrc"
 source "${HOME}/MetisWISE/toolbox/become_system_user.sh"
