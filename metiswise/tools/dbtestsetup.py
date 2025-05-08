@@ -3,6 +3,9 @@
 
 Assumes a PostgreSQL database is running with user SYSTEM as administrator.
 """
+# on some systems (like GUIX), it is necessary to import zlib before importing psycopg2
+# noinspection PyUnresolvedReferences
+import zlib
 import psycopg2
 
 if __name__ == "__main__":
