@@ -41,6 +41,7 @@ Then perform these workarounds (TODO: fix these)
 - in `container/compose.yml`, replace directories refering to `hugo` wit the appropriate paths.
 
 ```bash
+cd container
 podman build -t metiswise .
 cd container
 podman-compose up
@@ -72,7 +73,7 @@ The database should be setup so it has a schema.
 
 You can connect to the metiswise container through
 ```bash
-podman exec -ti podman_metiswise_1 bash
+podman exec -ti container_metiswise_1 bash
 ```
 
 Run these commands in the container.
