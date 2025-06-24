@@ -41,8 +41,9 @@ Then perform these workarounds (TODO: fix these)
 - in `container/compose.yml`, replace directories refering to `hugo` wit the appropriate paths.
 
 ```bash
-cd container
-podman build -t metiswise .
+export OMEGACEN_CONDA_CREDENTIALS=username:password # See https://metis.strw.leidenuniv.nl/wiki/doku.php?id=ait:archive
+podman build --secret id=OMEGACEN_CONDA_CREDENTIALS,type=env -t metiswise .
+
 cd container
 podman-compose up
 ```
