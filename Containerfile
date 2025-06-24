@@ -4,7 +4,7 @@
 # export OMEGACEN_CONDA_CREDENTIALS=username:password
 #
 # 2) Build the image
-# podman build --secret id=OMEGACEN_CONDA_CREDENTIALS,env=OMEGACEN_CONDA_CREDENTIALS -t metiswise .
+# podman build --secret=id=OMEGACEN_CONDA_CREDENTIALS,type=env -t metiswise .
 #
 # 3) Run the image
 # podman run  -it --network=host --volume="/:/hostroot" --volume="${XAUTHORITY:-$HOME/.Xauthority}:/home/metis/.Xauthority:ro"   --env DISPLAY="${DISPLAY}" metiswise
