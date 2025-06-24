@@ -58,7 +58,18 @@ RUN --mount=type=secret,id=OMEGACEN_CONDA_CREDENTIALS \
     conda config --add channels omegacen; \
     conda config --add channels "https://$(cat /run/secrets/OMEGACEN_CONDA_CREDENTIALS)@conda.astro-wise.org/"; \
     conda install -y --solver=classic conda-forge::conda-libmamba-solver conda-forge::libmamba conda-forge::libmambapy conda-forge::libarchive; \
-    conda install -y common psycopg2 astropy pytest jupyter httpcore lxml httpx docutils pooch scipy conda-build cpl python-cpl;
+    conda install -y common psycopg2 astropy pytest jupyter httpcore lxml httpx docutils pooch scipy conda-build;
+
+# TODO from conda install: cpl python-cpl
+
+RUN mkdir "${HOME}/install"; \
+    cd  "${HOME}/install"; \
+    wget https://ftp.eso.org/pub/dfs/pipelines/libraries/cpl/cpl-7.3.2.tar.gz; \
+    tar -xzvf cpl-7.3.2.tar.gz; \
+    cd cpl-7.3.2; \
+    ./configure; \
+    make; \
+    make install;
 
 RUN pip install \
     ScopeSim \
@@ -77,3 +88,13 @@ COPY . /root/MetisWISE
 #USER ${NB_USER}
 
 RUN bash -l /root/MetisWISE/toolbox/install_run_as_user.sh
+
+ENV PYESOREX_PLUGIN_DIR "/root/METIS_Pipeline/metisp/pymetis/src/pymetis/recipes"
+ENV PYCPL_RECIPE_DIR "/root/METIS_Pipeline/metisp/pyrecipes/"
+ENV PYTHONPATH "/root/METIS_Pipeline/metisp/pymetis/src/"
+
+ENV SOF_DATA "/root/METIS_Pipeline_Test_Data/metis_sim_small_1/data"
+ENV SOF_DIR "/root/METIS_Pipeline_Test_Data/metis_sim_small_1/sof"
+
+# CPL in installed in /usr/local/lib/
+ENV LD_LIBRARY_PATH "/usr/local/lib"
