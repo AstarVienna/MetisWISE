@@ -35,6 +35,20 @@ RUN \
     apt-get update; \
     apt-get upgrade -y; \
     apt-get install -y file less emacs curl vim man-db meld tmux apt-file x11-apps inetutils-ping; \
+    apt-get install -y \
+        build-essential \
+        pkg-config \
+        wget gcc  automake autogen libtool gsl-bin libgsl-dev libfftw3-bin libfftw3-dev fftw-dev \
+        curl bzip2 less subversion git cppcheck lcov valgrind \
+        zlib1g zlib1g-dev \
+        liberfa1 liberfa-dev \
+        libcurl4-openssl-dev libcurl4 \
+        tmux ripgrep file \
+        libcfitsio-bin libcfitsio-dev \
+        wcslib-dev wcslib-tools \
+        perl cmake \
+        graphviz meld \
+        emacs vim nano; \
     apt-file update;
 
 RUN --mount=type=secret,id=OMEGACEN_CONDA_CREDENTIALS \
@@ -44,12 +58,14 @@ RUN --mount=type=secret,id=OMEGACEN_CONDA_CREDENTIALS \
     conda config --add channels omegacen; \
     conda config --add channels "https://$(cat /run/secrets/OMEGACEN_CONDA_CREDENTIALS)@conda.astro-wise.org/"; \
     conda install -y --solver=classic conda-forge::conda-libmamba-solver conda-forge::libmamba conda-forge::libmambapy conda-forge::libarchive; \
-    conda install -y common psycopg2 astropy pytest jupyter httpcore lxml httpx docutils pooch scipy conda-build;
+    conda install -y common psycopg2 astropy pytest jupyter httpcore lxml httpx docutils pooch scipy conda-build cpl python-cpl;
 
 RUN pip install \
     ScopeSim \
     ScopeSim_Templates \
     git+https://github.com/AstarVienna/ScopeSim_Data.git
+
+RUN pip install --extra-index-url https://ftp.eso.org/pub/dfs/pipelines/libraries pycpl pyesorex edps adari_core
 
 # Copy over the repository. This breaks the caching.
 COPY . /root/MetisWISE
