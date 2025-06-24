@@ -49,10 +49,10 @@ podman-compose up
 ```
 
 Podman compose will start four instances, that you can see with `podman ps`:
-- podman_postgres_1, with the test database
-- podman_dbviewer_1, with the web-based database viewer
-- podman_jupyter_1, with a jupyter notebook server
-- podman_metiswise_1, with bindings so X11 can be used.
+- container_postgres_1, with the test database
+- container_dbviewer_1, with the web-based database viewer
+- container_jupyter_1, with a jupyter notebook server
+- container_metiswise_1, with bindings so X11 can be used.
 
 podman-compose should give you a link to a Jupyter Notebook that you can open.
 That is, it should print something like
