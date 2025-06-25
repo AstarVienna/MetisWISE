@@ -55,36 +55,31 @@ RUN --mount=type=secret,id=OMEGACEN_CONDA_CREDENTIALS \
     conda config --add channels "https://$(cat /run/secrets/OMEGACEN_CONDA_CREDENTIALS)@conda.astro-wise.org/"; \
     conda install -y common psycopg2 cpl python-cpl metiswise;
 
-# TODO install from conda or not? astropy pytest jupyter httpcore lxml httpx docutils pooch scipy conda-build;
-
 # Setting CPLDIR is necessary to install pycpl
 ENV CPLDIR=/opt/conda
 
-RUN pip install --extra-index-url https://ftp.eso.org/pub/dfs/pipelines/libraries pycpl pyesorex edps adari_core
+RUN pip install \
+    --extra-index-url https://ftp.eso.org/pub/dfs/pipelines/libraries \
+    pycpl pyesorex edps adari_core
 
 
+# TODO: Remove @hb/removetemporaryfiles branch from METIS_Simulations
 RUN pip install \
     ScopeSim \
     ScopeSim_Templates \
-    git+https://github.com/AstarVienna/ScopeSim_Data.git
+    git+https://github.com/AstarVienna/ScopeSim_Data.git \
+    git+https://github.com/AstarVienna/METIS_DRLD.git \
+    git+https://github.com/AstarVienna/METIS_Simulations.git@hb/removetemporaryfiles
 
-# # Copy over the repository. This breaks the caching.
-# COPY . /root/MetisWISE
-#
-# # Install
-# #RUN bash -l ${HOME}/MetisWISE/toolbox/install_dependencies_debian.sh
-#
-# # TODO: Enable NB_USER again
-# #USER ${NB_USER}
-#
-# RUN bash -l /root/MetisWISE/toolbox/install_run_as_user.sh
-#
-# ENV PYESOREX_PLUGIN_DIR "/root/METIS_Pipeline/metisp/pymetis/src/pymetis/recipes"
-# ENV PYCPL_RECIPE_DIR "/root/METIS_Pipeline/metisp/pyrecipes/"
-# ENV PYTHONPATH "/root/METIS_Pipeline/metisp/pymetis/src/"
-#
-# ENV SOF_DATA "/root/METIS_Pipeline_Test_Data/metis_sim_small_1/data"
-# ENV SOF_DIR "/root/METIS_Pipeline_Test_Data/metis_sim_small_1/sof"
-#
-# # CPL in installed in /usr/local/lib/
-# ENV LD_LIBRARY_PATH "/usr/local/lib"
+RUN git clone https://github.com/AstarVienna/METIS_Pipeline.git; \
+    bash "${HOME}/METIS_Pipeline/toolbox/create_config.sh"; \
+    git clone https://github.com/AstarVienna/irdb.git; \
+    echo "export AWETARGET=metiswise" >> "${HOME}/.bashrc"
+
+
+ENV PYESOREX_PLUGIN_DIR "/root/METIS_Pipeline/metisp/pymetis/src/pymetis/recipes"
+ENV PYCPL_RECIPE_DIR "/root/METIS_Pipeline/metisp/pyrecipes/"
+ENV PYTHONPATH "/root/METIS_Pipeline/metisp/pymetis/src/"
+
+ENV SOF_DATA "/root/METIS_Pipeline_Test_Data/metis_sim_small_1/data"
+ENV SOF_DIR "/root/METIS_Pipeline_Test_Data/metis_sim_small_1/sof"
