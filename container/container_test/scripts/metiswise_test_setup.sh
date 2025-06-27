@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+set -Eeuo pipefail
+
 echo "Setting up MetisWISE test system."
 
 echo "Become system user"
@@ -22,6 +24,16 @@ source "${HOME}/MetisWISE/toolbox/become_normal_user.sh"
 echo "Tell the dbviewer it can start"
 touch "${HOME}/space/control/database_setup"
 
+echo "Can we run recipes?"
+pyesorex --recipes
+
+echo "Starting the edps by listing workflows"
+# Need to start the edps in the right directory, because the workflow_dir
+# is listed as .
+pushd METIS_Pipeline
+edps -lw
+popd
+
 echo "Going to simulate some data"
 DIR_SITE_PACKAGES=$(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")
 DIR_SIMULATIONS="${DIR_SITE_PACKAGES}/Simulations"
@@ -35,7 +47,12 @@ python3 "${DIR_SIMULATIONS}/python/run_recipes.py" \
     --outputDir "${HOME}/space/raw" \
     --doCalib=1 --sequence=1 --doStatic --nCores=1
 
+echo "Classify data with the EDPS"
+edps -w metis.metis_wkf -i "${HOME}/space/raw" -c
 
+echo "Process data with the EDPS"
+edps -w metis.metis_wkf -i "${HOME}/space/raw" -o "${HOME}/space/processed"
+# TODO: figure out how to move the files.
 
 echo "Stay a while... stay forever!"
 while true; do sleep 60 ; done
