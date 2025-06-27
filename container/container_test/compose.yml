@@ -1,0 +1,29 @@
+version: "3.8"
+services:
+  postgres:
+    image: docker.io/library/postgres:latest
+    environment:
+      - "POSTGRES_DB=wise"
+      - "POSTGRES_USER=system"
+      - "POSTGRES_PASSWORD=klmn"
+  metiswise:
+    image: metiswise:latest
+    tty: true
+    volumes:
+      - type: bind
+        source: ../
+        target: /root/metiswise
+    environment:
+      - DISPLAY=${DISPLAY}
+  dbviewer:
+    image: metiswise:latest
+    tty: true
+    volumes:
+      - type: bind
+        source: ../
+        target: /root/MetisWISE
+    ports:
+      - "127.0.0.1:8080:8080" # dbviewer
+    environment:
+      - DISPLAY=${DISPLAY}
+    entrypoint: /root/MetisWISE/container/entrypoint_dbview.sh
