@@ -10,6 +10,7 @@
 # podman run  -it --network=host --volume="/:/hostroot" --volume="${XAUTHORITY:-$HOME/.Xauthority}:/home/metis/.Xauthority:ro"   --env DISPLAY="${DISPLAY}" metiswise
 
 FROM quay.io/condaforge/miniforge3:25.3.0-3
+# /opt/conda/lib/python3.12 is hardcoded in some (dbviewer) scripts, so update those if necessary.
 
 MAINTAINER Hugo Buddelmeijer <hugo@buddelmeijer.nl>
 
@@ -62,24 +63,28 @@ RUN pip install \
     --extra-index-url https://ftp.eso.org/pub/dfs/pipelines/libraries \
     pycpl pyesorex edps adari_core
 
-
-# TODO: Remove @hb/removetemporaryfiles branch from METIS_Simulations
 RUN pip install \
     ScopeSim \
     ScopeSim_Templates \
     git+https://github.com/AstarVienna/ScopeSim_Data.git \
-    git+https://github.com/AstarVienna/METIS_DRLD.git \
-    git+https://github.com/AstarVienna/METIS_Simulations.git@hb/removetemporaryfiles
+    git+https://github.com/AstarVienna/METIS_Simulations.git
 
-RUN git clone https://github.com/AstarVienna/METIS_Pipeline.git; \
-    bash "${HOME}/METIS_Pipeline/toolbox/create_config.sh"; \
-    git clone https://github.com/AstarVienna/irdb.git; \
-    echo "export AWETARGET=metiswise" >> "${HOME}/.bashrc"
+# TODO: Make sure that METIS_DRLD can be pip-installed
+RUN git clone https://github.com/AstarVienna/METIS_DRLD.git "${HOME}/METIS_DRLD"
+
+# TODO: Make sure that METIS_Pipeline can be pip-installed
+# TODO: Do something better with the irdb.
+RUN git clone https://github.com/AstarVienna/METIS_Pipeline.git "${HOME}/METIS_Pipeline"; \
+    git clone https://github.com/AstarVienna/irdb.git@e2d3aa21b20d95ff9337d4efed0557fd83816be9 "${HOME}/irdb";
+
+RUN bash "${HOME}/METIS_Pipeline/toolbox/create_config.sh"; \
+    echo "export AWETARGET=metiswise" >> "${HOME}/.bashrc"; \
+    ln -s "${HOME}/irdb" "/opt/conda/lib/python3.12/site-packages/Simulations/inst_pkgs"
 
 
 ENV PYESOREX_PLUGIN_DIR "/root/METIS_Pipeline/metisp/pymetis/src/pymetis/recipes"
 ENV PYCPL_RECIPE_DIR "/root/METIS_Pipeline/metisp/pyrecipes/"
-ENV PYTHONPATH "/root/METIS_Pipeline/metisp/pymetis/src/"
+ENV PYTHONPATH "/root/METIS_DRLD:/root/METIS_Pipeline/metisp/pymetis/src/"
 
 ENV SOF_DATA "/root/METIS_Pipeline_Test_Data/metis_sim_small_1/data"
 ENV SOF_DIR "/root/METIS_Pipeline_Test_Data/metis_sim_small_1/sof"
