@@ -46,7 +46,7 @@ pushd METIS_DRLD
 pip install -e .
 popd
 
-git clone -b jb/ifu_rsrf https://github.com/AstarVienna/METIS_Simulations.git
+git clone https://github.com/AstarVienna/METIS_Simulations.git
 pushd METIS_Simulations
 pip install -e .
 popd
