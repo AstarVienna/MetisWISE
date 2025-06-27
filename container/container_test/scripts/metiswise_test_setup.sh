@@ -50,6 +50,9 @@ python3 "${DIR_SIMULATIONS}/python/run_recipes.py" \
 echo "Classify data with the EDPS"
 edps -w metis.metis_wkf -i "${HOME}/space/raw" -c
 
+echo "Ingesting data into the archive"
+python MetisWISE/metiswise/tools/ingest_raw.py space/raw/*.fits
+
 echo "Process data with the EDPS"
 edps -w metis.metis_wkf -i "${HOME}/space/raw" -o "${HOME}/space/processed"
 # TODO: figure out how to move the files.
