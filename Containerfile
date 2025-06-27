@@ -75,7 +75,7 @@ RUN git clone https://github.com/AstarVienna/METIS_DRLD.git "${HOME}/METIS_DRLD"
 # TODO: Make sure that METIS_Pipeline can be pip-installed
 # TODO: Do something better with the irdb.
 RUN git clone https://github.com/AstarVienna/METIS_Pipeline.git "${HOME}/METIS_Pipeline"; \
-    git clone https://github.com/AstarVienna/irdb.git@e2d3aa21b20d95ff9337d4efed0557fd83816be9 "${HOME}/irdb";
+    git clone https://github.com/AstarVienna/irdb.git --revision e2d3aa21b20d95ff9337d4efed0557fd83816be9 "${HOME}/irdb";
 
 RUN bash "${HOME}/METIS_Pipeline/toolbox/create_config.sh"; \
     echo "export AWETARGET=metiswise" >> "${HOME}/.bashrc"; \
@@ -88,3 +88,10 @@ ENV PYTHONPATH "/root/METIS_DRLD:/root/METIS_Pipeline/metisp/pymetis/src/"
 
 ENV SOF_DATA "/root/METIS_Pipeline_Test_Data/metis_sim_small_1/data"
 ENV SOF_DIR "/root/METIS_Pipeline_Test_Data/metis_sim_small_1/sof"
+
+# Copy over the repository. This breaks the caching.
+# TODO: It should not be necessary to copy over the repository, because
+#       installing the MetisWISE package should be enough. For now it changes
+#       too often though. And these are still mentioned in the dbviewer
+#       start-up scripts.
+COPY . /root/MetisWISE
