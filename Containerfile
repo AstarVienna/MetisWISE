@@ -97,6 +97,8 @@ ENV PYTHONPATH "/root/METIS_DRLD:/root/METIS_Pipeline/metisp/pymetis/src/:/root/
 ENV SOF_DATA "/root/METIS_Pipeline_Test_Data/metis_sim_small_1/data"
 ENV SOF_DIR "/root/METIS_Pipeline_Test_Data/metis_sim_small_1/sof"
 
+WORKDIR "/root"
+
 # Copy over the repository. This breaks the caching.
 # TODO: It should not be necessary to copy over the repository, because
 #       installing the MetisWISE package should be enough. For now it changes
