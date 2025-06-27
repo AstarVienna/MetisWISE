@@ -8,7 +8,5 @@ export AWETARGET=metiswise
 export PYTHONPATH="${HOME}/MetisWISE"
 "${HOME}/MetisWISE/toolbox/dbview.sh" start
 
-echo "Sleep"
-sleep 10
-echo "Run another bash so the script won't quit"
-bash
+echo "Sleeping to keep the container running"
+while true; do sleep 60 ; done
