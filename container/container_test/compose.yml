@@ -6,24 +6,22 @@ services:
       - "POSTGRES_DB=wise"
       - "POSTGRES_USER=system"
       - "POSTGRES_PASSWORD=klmn"
+    volumes:
+      - ./space:/root/space
   metiswise:
     image: metiswise:latest
-    tty: true
-    volumes:
-      - type: bind
-        source: ../
-        target: /root/metiswise
     environment:
       - DISPLAY=${DISPLAY}
+    volumes:
+      - ./space:/root/space
+      - ../..:/root/MetisWISE
+      - ./scripts:/root/scripts
+    entrypoint: /root/scripts/metiswise_test_setup.sh
   dbviewer:
     image: metiswise:latest
-    tty: true
-    volumes:
-      - type: bind
-        source: ../
-        target: /root/MetisWISE
     ports:
       - "127.0.0.1:8080:8080" # dbviewer
-    environment:
-      - DISPLAY=${DISPLAY}
-    entrypoint: /root/MetisWISE/container/entrypoint_dbview.sh
+    entrypoint: /root/scripts/entrypoint_dbview_test.sh
+    volumes:
+      - ../..:/root/MetisWISE
+      - ./space:/root/space
