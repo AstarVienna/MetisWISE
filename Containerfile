@@ -15,7 +15,7 @@ FROM quay.io/condaforge/miniforge3:25.3.0-3
 MAINTAINER Hugo Buddelmeijer <hugo@buddelmeijer.nl>
 
 # Run-time dependencies:
-# -
+# - postgresql: for psql to connect to the database manually
 #
 # Build dependencies:
 # - conda-build
@@ -37,6 +37,7 @@ RUN \
     apt-get install -y \
         build-essential \
         pkg-config \
+        postgresql \
         wget gcc  automake autogen libtool gsl-bin libgsl-dev libfftw3-bin libfftw3-dev fftw-dev \
         curl bzip2 less subversion git cppcheck lcov valgrind \
         zlib1g zlib1g-dev \
@@ -75,16 +76,23 @@ RUN git clone https://github.com/AstarVienna/METIS_DRLD.git "${HOME}/METIS_DRLD"
 # TODO: Make sure that METIS_Pipeline can be pip-installed
 # TODO: Do something better with the irdb.
 RUN git clone https://github.com/AstarVienna/METIS_Pipeline.git "${HOME}/METIS_Pipeline"; \
-    git clone https://github.com/AstarVienna/irdb.git --revision e2d3aa21b20d95ff9337d4efed0557fd83816be9 "${HOME}/irdb";
+    git clone https://github.com/AstarVienna/irdb.git "${HOME}/irdb"; \
+    git -C "${HOME}/irdb" checkout e2d3aa21b20d95ff9337d4efed0557fd83816be9;
+
+# TODO, as interim do this once git 2.49.0 can be used
+#  git clone https://github.com/AstarVienna/irdb.git --revision e2d3aa21b20d95ff9337d4efed0557fd83816be9 "${HOME}/irdb";
+
 
 RUN bash "${HOME}/METIS_Pipeline/toolbox/create_config.sh"; \
-    echo "export AWETARGET=metiswise" >> "${HOME}/.bashrc"; \
     ln -s "${HOME}/irdb" "/opt/conda/lib/python3.12/site-packages/Simulations/inst_pkgs"
 
+ENV AWETARGET metiswise
 
 ENV PYESOREX_PLUGIN_DIR "/root/METIS_Pipeline/metisp/pymetis/src/pymetis/recipes"
 ENV PYCPL_RECIPE_DIR "/root/METIS_Pipeline/metisp/pyrecipes/"
-ENV PYTHONPATH "/root/METIS_DRLD:/root/METIS_Pipeline/metisp/pymetis/src/"
+
+# TODO: Ensure that it is not necessary to set the PYTHONPATH at all
+ENV PYTHONPATH "/root/METIS_DRLD:/root/METIS_Pipeline/metisp/pymetis/src/:/root/MetisWISE"
 
 ENV SOF_DATA "/root/METIS_Pipeline_Test_Data/metis_sim_small_1/data"
 ENV SOF_DIR "/root/METIS_Pipeline_Test_Data/metis_sim_small_1/sof"
@@ -94,4 +102,4 @@ ENV SOF_DIR "/root/METIS_Pipeline_Test_Data/metis_sim_small_1/sof"
 #       installing the MetisWISE package should be enough. For now it changes
 #       too often though. And these are still mentioned in the dbviewer
 #       start-up scripts.
-COPY . /root/MetisWISE
+# COPY . /root/MetisWISE
