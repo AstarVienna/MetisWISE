@@ -55,7 +55,7 @@ RUN --mount=type=secret,id=OMEGACEN_CONDA_CREDENTIALS \
     conda config --add channels conda-forge; \
     conda config --add channels omegacen; \
     conda config --add channels "https://$(cat /run/secrets/OMEGACEN_CONDA_CREDENTIALS)@conda.astro-wise.org/"; \
-    conda install -y common psycopg2 cpl python-cpl metiswise;
+    conda install -y common psycopg2 cpl metiswise;
 
 # Setting CPLDIR is necessary to install pycpl
 ENV CPLDIR=/opt/conda
