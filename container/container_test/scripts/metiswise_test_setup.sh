@@ -38,11 +38,13 @@ popd
 echo "Going to simulate some data"
 DIR_SITE_PACKAGES=$(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")
 DIR_SIMULATIONS="${DIR_SITE_PACKAGES}/Simulations"
-# YAML="$DIR_SIMULATIONS/YAML/allRecipes.yaml"
-YAML="$DIR_SIMULATIONS/YAML/img.yaml"
 
 ln -s irdb inst_pkgs
-# TODO: Ensure nCores can be set to 10 or so; can cause troubles with pooch.
+
+# Do one run with just img.yaml with nCores==1, because
+# setting nCores to 10 or so can cause troubles with pooch because it will
+# try to download the same file twice at the same time.
+YAML="$DIR_SIMULATIONS/YAML/img.yaml"
 python3 "${DIR_SIMULATIONS}/python/run_recipes.py" \
     --inputYAML="${YAML}" \
     --outputDir "${HOME}/space/raw" \
