@@ -64,11 +64,13 @@ RUN pip install \
     --extra-index-url https://ftp.eso.org/pub/dfs/pipelines/libraries \
     pycpl pyesorex edps adari_core
 
-RUN pip install \
-    ScopeSim \
-    ScopeSim_Templates \
-    git+https://github.com/AstarVienna/ScopeSim_Data.git \
-    git+https://github.com/AstarVienna/METIS_Simulations.git
+# The order of pip installs should be like this because otherwise
+# METIS_Simulations might downgrade ScopeSim and ScopeSim_Templates.
+RUN \
+    pip install git+https://github.com/AstarVienna/METIS_Simulations.git; \
+    pip install --upgrade ScopeSim_Templates; \
+    pip install --upgrade ScopeSim; \
+    pip install --upgrade git+https://github.com/AstarVienna/ScopeSim_Data.git;
 
 # TODO: Make sure that METIS_DRLD can be pip-installed
 RUN git clone https://github.com/AstarVienna/METIS_DRLD.git "${HOME}/METIS_DRLD"
