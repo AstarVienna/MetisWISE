@@ -4,3 +4,5 @@ from metiswise.main.dataitem import *
 from metiswise.main.hardware import *
 # noinspection PyUnresolvedReferences
 from metiswise.main.raw import *
+# noinspection PyUnresolvedReferences
+from metiswise.main.pro import *

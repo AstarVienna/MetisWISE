@@ -59,12 +59,16 @@ python3 "${DIR_SIMULATIONS}/python/run_recipes.py" \
 echo "Classify data with the EDPS"
 edps -w metis.metis_wkf -i "${HOME}/space/raw" -c
 
-echo "Ingesting data into the archive"
-python MetisWISE/metiswise/tools/ingest_raw.py space/raw/*.fits
+echo "Ingesting raw data into the archive"
+python MetisWISE/metiswise/tools/ingest_file.py space/raw/*.fits
 
 echo "Process data with the EDPS"
 edps -w metis.metis_wkf -i "${HOME}/space/raw" -o "${HOME}/space/processed"
 # TODO: figure out how to move the files.
+
+echo "Ingesting processed data into the archive"
+# TODO: These filenames are not unique at all, so this won't work as intended.
+python MetisWISE/metiswise/tools/ingest_file.py /tmp/EDPS_data/METIS/metis_det_dark/9e3f255c-03af-4ab2-aa1c-2009cc77d941/MASTER_DARK_2RG.fits
 
 echo "Stay a while... stay forever!"
 while true; do sleep 60 ; done
