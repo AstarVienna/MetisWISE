@@ -47,6 +47,12 @@ python3 "${DIR_SIMULATIONS}/python/run_recipes.py" \
     --outputDir "${HOME}/space/raw" \
     --doCalib=1 --sequence=1 --doStatic --nCores=1
 
+#YAML="$DIR_SIMULATIONS/YAML/allRecipes.yaml"
+#python3 "${DIR_SIMULATIONS}/python/run_recipes.py" \
+#    --inputYAML="${YAML}" \
+#    --outputDir "${HOME}/space/raw" \
+#    --doCalib=1 --sequence=1 --doStatic --nCores=10
+
 echo "Classify data with the EDPS"
 edps -w metis.metis_wkf -i "${HOME}/space/raw" -c
 
