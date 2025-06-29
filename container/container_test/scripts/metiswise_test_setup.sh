@@ -22,6 +22,7 @@ echo "Become normal user again"
 source "${HOME}/MetisWISE/toolbox/become_normal_user.sh"
 
 echo "Tell the dbviewer it can start"
+mkdir -p "${HOME}/space/control/"
 touch "${HOME}/space/control/database_setup"
 
 echo "Can we run recipes?"
