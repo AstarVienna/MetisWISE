@@ -51,7 +51,12 @@ pushd METIS_Simulations
 pip install -e .
 popd
 
+git clone https://github.com/AstarVienna/METIS_Pipeline.git
+bash "${HOME}/METIS_Pipeline/toolbox/create_config.sh"
+
 git clone https://github.com/AstarVienna/irdb.git
+
+git clone https://github.com/AstarVienna/METIS_Pipeline_Test_Data.git
 
 # TODO: check whether directory already exists.
 #git clone https://github.com/AstarVienna/MetisWISE.git

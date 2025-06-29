@@ -1,0 +1,27 @@
+version: "3.8"
+services:
+  postgres:
+    image: docker.io/library/postgres:latest
+    environment:
+      - "POSTGRES_DB=wise"
+      - "POSTGRES_USER=system"
+      - "POSTGRES_PASSWORD=klmn"
+    volumes:
+      - ./space:/root/space
+  metiswise:
+    image: metiswise:latest
+    environment:
+      - DISPLAY=${DISPLAY}
+    volumes:
+      - ./space:/root/space
+      - ../..:/root/MetisWISE
+      - ./scripts:/root/scripts
+    entrypoint: /root/scripts/metiswise_test_setup.sh
+  dbviewer:
+    image: metiswise:latest
+    ports:
+      - "127.0.0.1:8080:8080" # dbviewer
+    entrypoint: /root/scripts/entrypoint_dbview_test.sh
+    volumes:
+      - ../..:/root/MetisWISE
+      - ./space:/root/space
