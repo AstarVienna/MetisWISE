@@ -4,26 +4,29 @@
 from astropy.io import fits
 import sys
 from metiswise.main.raw import *
+from metiswise.main.pro import *
 from common.database.ClassCache import classcache
 
 
 def ingest_file(filename: str):
     print()
     print(f"Ingesting {filename} .")
-    hdus = fits.open(filename)
-    if "ESO DPR CATG" not in hdus[0].header:
-        if "ESO PRO CATG" in hdus[0].header:
-            print("This is processed data, skipping.")
-            return
-        raise ValueError(f"Cannot find DPR.CATG or PRO.CATG in {filename}")
+
     q_di = (DataItem.filename == filename)
     if len(q_di):
         print(f"Found {len(q_di)} existing {filename}.")
         myraw = q_di[0]
-    else:
+        return myraw
+
+    hdus = fits.open(filename)
+    if "ESO DPR CATG" in hdus[0].header:
         myraw = Raw(filename)
-    
-    return myraw
+        return myraw
+    elif "ESO PRO CATG" in hdus[0].header:
+        mypro = Pro(filename)
+        return mypro
+    else:
+        raise ValueError(f"Cannot find DPR.CATG or PRO.CATG in {filename}")
 
 
 def show_help():
