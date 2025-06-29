@@ -64,11 +64,13 @@ RUN pip install \
     --extra-index-url https://ftp.eso.org/pub/dfs/pipelines/libraries \
     pycpl pyesorex edps adari_core
 
-RUN pip install \
-    ScopeSim \
-    ScopeSim_Templates \
-    git+https://github.com/AstarVienna/ScopeSim_Data.git \
-    git+https://github.com/AstarVienna/METIS_Simulations.git
+# The order of pip installs should be like this because otherwise
+# METIS_Simulations might downgrade ScopeSim and ScopeSim_Templates.
+RUN \
+    pip install git+https://github.com/AstarVienna/METIS_Simulations.git; \
+    pip install --upgrade ScopeSim_Templates; \
+    pip install --upgrade ScopeSim; \
+    pip install --upgrade git+https://github.com/AstarVienna/ScopeSim_Data.git;
 
 # TODO: Make sure that METIS_DRLD can be pip-installed
 RUN git clone https://github.com/AstarVienna/METIS_DRLD.git "${HOME}/METIS_DRLD"
@@ -76,8 +78,10 @@ RUN git clone https://github.com/AstarVienna/METIS_DRLD.git "${HOME}/METIS_DRLD"
 # TODO: Make sure that METIS_Pipeline can be pip-installed
 # TODO: Do something better with the irdb.
 RUN git clone https://github.com/AstarVienna/METIS_Pipeline.git "${HOME}/METIS_Pipeline"; \
-    git clone https://github.com/AstarVienna/irdb.git "${HOME}/irdb"; \
-    git -C "${HOME}/irdb" checkout e2d3aa21b20d95ff9337d4efed0557fd83816be9;
+    git clone https://github.com/AstarVienna/irdb.git "${HOME}/irdb";
+
+# TODO: Hardcode some versions again
+#     git -C "${HOME}/irdb" checkout e2d3aa21b20d95ff9337d4efed0557fd83816be9;
 
 # TODO, as interim do this once git 2.49.0 can be used
 #  git clone https://github.com/AstarVienna/irdb.git --revision e2d3aa21b20d95ff9337d4efed0557fd83816be9 "${HOME}/irdb";
