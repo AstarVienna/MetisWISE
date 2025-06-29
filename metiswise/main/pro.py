@@ -24,7 +24,7 @@ class Pro(DataItem):
             with fits.open(filename) as hdus:
                 header_primary = hdus[0].header
 
-            pro_catg = header_primary["PRO CATG"],
+            pro_catg = header_primary["ESO PRO CATG"]
             assert pro_catg in self.class_from_procatg, f"Cannot find {pro_catg}."
             thisclass = self.class_from_procatg[pro_catg]
             print("Found", thisclass)
