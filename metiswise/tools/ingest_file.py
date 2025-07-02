@@ -43,6 +43,7 @@ def main():
             continue
         myraw = ingest_file(filename)
         if myraw:
+            myraw.store()
             myraw.commit()
 
     print()
