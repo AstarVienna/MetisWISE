@@ -4,6 +4,8 @@ MetisWISE
 MetisWISE is the client software for the METIS AIT archive.
 It contains a Python library, called `metiswise`, to connect to the METIS AIT database and to retrieve data from the METIS AIT data server.
 
+See [docs/index.md](docs index), or see [docs/index.md] .
+
 Installation
 ------------
 
