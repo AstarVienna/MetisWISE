@@ -5,5 +5,5 @@ eval "$(conda shell.bash hook)"
 conda activate base
 export AWETARGET=metiswise
 # TODO: Move to src directory?
-export PYTHONPATH="${HOME}/MetisWISE"
+export PYTHONPATH="${HOME}/metiswise:${PYTHONPATH}"
 jupyter notebook --ip 0.0.0.0 --no-browser --allow-root
