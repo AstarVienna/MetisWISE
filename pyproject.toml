@@ -16,10 +16,44 @@ classifiers=[
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Astronomy",
 ]
-dependencies = []
+dependencies = [
+    "commonwise",
+    "astropy",
+    "numpy",
+    "matplotlib",
+    "sphinx",
+    "scipy",
+    "pooch",
+    "docutils",
+    "httpx",
+    "lxml",
+    "httpcore",
+
+    # TODO: Is there a benefit to using psycopg2 over psycopg2-binary?
+    "psycopg2-binary",
+    # "psycopg2",
+
+    # TODO: Move some of these to optional dependency groups?
+    "jupyter",
+
+    # TODO: Move these to dev dependencies.
+    "pytest",
+    "coverage",
+    "mock",
+
+    # TODO: Move to build dependencies.
+    "build",
+]
 
 [project.urls]
 "Source" = "https://github.com/AstarVienna/MetisWISE"
+
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+include-package-data = true
 
 [tool.setuptools.packages]
 find = {}

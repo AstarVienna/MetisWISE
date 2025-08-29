@@ -155,6 +155,12 @@ def generate_raw_classes_from_drld():
         # Generate a class for this raw data.
         newclass = type(di.do_catg, (theclass,), {})
 
+        # TODO: Aaargh. Instead, move generate_raw_classes_from_drld,
+        # and do
+        # import raw
+        # setattr(raw, newclass.__name__, newclass)
+        globals()[newclass.__name__] = newclass
+
         assert dpr_key not in Raw.class_from_dpr
         Raw.class_from_dpr[dpr_key] = newclass
         setattr(current_module, newclass.__name__, newclass)

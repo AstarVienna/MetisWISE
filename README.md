@@ -7,25 +7,18 @@ It contains a Python library, called `metiswise`, to connect to the METIS AIT da
 Installation
 ------------
 
-MetisWISE uses dependencies from the AstroWISE conda channel.
+MetisWISE uses dependencies from OmegaCEN which are in the process of being made open source.
+For the moment the dependencies are only only available through a password protected pip channel.
 The login credentials for that channel can be found on the [METIS AIT Archive page on the METIS wiki](https://metis.strw.leidenuniv.nl/wiki/doku.php?id=ait:archive).
 
-First, install conda with your favorite tools.
+First create your Python environment through your favorite means, for example using `venv`.
 
-Then add channels
-```
-export OMEGACEN_CONDA_CREDENTIALS=login:password # See above
-conda config --add channels conda-forge
-conda config --add channels omegacen
-conda config --add channels "https://${OMEGACEN_CONDA_CREDENTIALS}@conda.astro-wise.org/"
+```bash
+export OMEGACEN_CREDENTIALS=login:password
+pip install --extra-index-url https://${OMEGACEN_CREDENTIALS}@pip.entropynaut.com/packages/ .
 ```
 
-Create the metiswise environment
-```
-conda create -n metiswise common psycopg2 astropy pytest jupyter httpcore lxml httpx docutils pooch scipy
-```
-
-See the Containerfile for more instructions.
+See the [Containerfile](Containerfile) for more instructions.
 
 Podman
 ------
@@ -37,12 +30,12 @@ This method creates a local database instance (PostgreSQL) to experiment with.
 First install podman and podman-compose through your favorite mechanism.
 
 Then perform these workarounds (TODO: fix these)
-- in `Containerfile`, replace the `OMEGACEN_CONDA_CREDENTIALS` variable with the credentials from the wiki.
+- in `Containerfile`, replace the `OMEGACEN_CREDENTIALS` variable with the credentials from the wiki.
 - in `container/compose.yml`, replace directories refering to `hugo` wit the appropriate paths.
 
 ```bash
-export OMEGACEN_CONDA_CREDENTIALS=username:password # See https://metis.strw.leidenuniv.nl/wiki/doku.php?id=ait:archive
-podman build --secret id=OMEGACEN_CONDA_CREDENTIALS,type=env -t metiswise .
+export OMEGACEN_CREDENTIALS=username:password # See https://metis.strw.leidenuniv.nl/wiki/doku.php?id=ait:archive
+podman build --secret id=OMEGACEN_CREDENTIALS,type=env -t metiswise .
 
 cd container
 podman-compose up
@@ -56,7 +49,7 @@ Podman compose will start four instances, that you can see with `podman ps`:
 
 podman-compose should give you a link to a Jupyter Notebook that you can open.
 That is, it should print something like
-```python
+```text
 jupyter_1    |     To access the server, open this file in a browser:
 jupyter_1    |         file:///home/metis/.local/share/jupyter/runtime/jpserver-26-open.html
 jupyter_1    |     Or copy and paste one of these URLs:
@@ -144,3 +137,14 @@ my_interesting_raws = LM_FLAT_LAMP_RAW.det_ndit == 1 && LM_FLAT_LAMP_RAW.det_dit
 print(len(all_my_raw_flats))
 ```
 
+Building and Publishing
+=======================
+
+1. Set the version in `pyproject.toml` to the desired version.
+
+2. Build
+   ```
+   python3 -m build
+   ```
+
+3. Upload `dist/commonwise-*.tar.gz` to https://pip.entropynaut.com/packages/metiswise/

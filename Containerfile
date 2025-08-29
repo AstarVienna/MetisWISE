@@ -1,10 +1,10 @@
 # Usage:
 #
-# 1) Get OMEGACEN_CONDA_CREDENTIALS from https://metis.strw.leidenuniv.nl/wiki/doku.php?id=ait:archive
-# export OMEGACEN_CONDA_CREDENTIALS=username:password
+# 1) Get OMEGACEN_CREDENTIALS from https://metis.strw.leidenuniv.nl/wiki/doku.php?id=ait:archive
+# export OMEGACEN_CREDENTIALS=username:password
 #
 # 2) Build the image
-# podman build --secret=id=OMEGACEN_CONDA_CREDENTIALS,type=env -t metiswise .
+# podman build --secret=id=OMEGACEN_CREDENTIALS,type=env -t metiswise .
 #
 # 3) Run the image
 # podman run  -it --network=host --volume="/:/hostroot" --volume="${XAUTHORITY:-$HOME/.Xauthority}:/home/metis/.Xauthority:ro"   --env DISPLAY="${DISPLAY}" metiswise
@@ -51,14 +51,19 @@ RUN \
         emacs vim nano; \
     apt-file update;
 
-RUN --mount=type=secret,id=OMEGACEN_CONDA_CREDENTIALS \
+#    conda config --add channels omegacen; \
+RUN \
     conda config --add channels conda-forge; \
-    conda config --add channels omegacen; \
-    conda config --add channels "https://$(cat /run/secrets/OMEGACEN_CONDA_CREDENTIALS)@conda.astro-wise.org/"; \
-    conda install -y common psycopg2 cpl metiswise;
+    conda install -y cpl;
 
 # Setting CPLDIR is necessary to install pycpl
 ENV CPLDIR=/opt/conda
+
+RUN echo "break cache";
+
+RUN --mount=type=secret,id=OMEGACEN_CREDENTIALS \
+    pip install \
+    --extra-index-url "https://$(cat /run/secrets/OMEGACEN_CREDENTIALS)@pip.entropynaut.com/packages/" metiswise;
 
 RUN pip install \
     --extra-index-url https://ftp.eso.org/pub/dfs/pipelines/libraries \
@@ -108,4 +113,4 @@ WORKDIR "/root"
 #       installing the MetisWISE package should be enough. For now it changes
 #       too often though. And these are still mentioned in the dbviewer
 #       start-up scripts.
-# COPY . /root/MetisWISE
+COPY . /root/MetisWISE

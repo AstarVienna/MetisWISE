@@ -11,7 +11,6 @@ services:
 #    network_mode: "host"
   metiswise:
     image: metiswise:latest
-    tty: true
     volumes:
       # TODO: Remove hugo-dependent volumes
       - type: bind
@@ -27,27 +26,25 @@ services:
 #    network_mode: "host"
   dbviewer:
     image: metiswise:latest
-    tty: true
     volumes:
       - type: bind
         source: ../
-        target: /root/MetisWISE
+        target: /root/metiswise
     ports:
       - "127.0.0.1:8080:8080" # dbviewer
     environment:
       - DISPLAY=${DISPLAY}
-    entrypoint: /root/MetisWISE/container/entrypoint_dbview.sh
+    entrypoint: /root/metiswise/container/entrypoint_dbview.sh
 #    network_mode: "host"
   jupyter:
     image: metiswise:latest
-    tty: true
     volumes:
       - type: bind
         source: ../
         target: /root/metiswise
     ports:
       - "127.0.0.1:8888:8888" # jupyter
-    entrypoint: /root/MetisWISE/container/entrypoint_notebook.sh
+    entrypoint: /root/metiswise/container/entrypoint_notebook.sh
 #    network_mode: "host"
 volumes:
   metiswisetestdb:
