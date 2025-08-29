@@ -55,3 +55,6 @@ dist
 
 # Virtual environment
 .venv
+
+# space to share data between different podman containers
+container/container_test/space/
