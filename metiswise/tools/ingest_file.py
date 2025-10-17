@@ -43,7 +43,8 @@ def main():
             continue
         myraw = ingest_file(filename)
         if myraw:
-            myraw.store()
+            print("Currently not actually storing the data.")
+            # myraw.store()
             myraw.commit()
 
     print()
