@@ -38,9 +38,6 @@ def main():
         show_help()
 
     for filename in sys.argv[1:]:
-        toskip = {"LM_IMAGE_SKY_RAW", "LM_LSS_SKY_RAW", "N_IMAGE_SKY_RAW", "N_LSS_SKY_RAW", "PERSISTENCE_MAP"}
-        if any(x in filename for x in toskip):
-            continue
         myraw = ingest_file(filename)
         if myraw:
             # TODO: Add some parameter to optionally store / commit.

@@ -11,16 +11,23 @@ from metiswise.main.drld import drld
 current_module = __import__(__name__)
 # These are used in the simulations but are not in the DRLD
 keys_to_ignore = {
+    # Unclear what the status is of the SCIENCE SKY_RAWs, see
+    # https://github.com/AstarVienna/METIS_Simulations/issues/151
     ('SCIENCE', 'IMAGE,LM', 'SKY'),
     ('SCIENCE', 'IMAGE,N', 'SKY'),
     ('SCIENCE', 'LSS,LM', 'SKY'),
-    ('SCIENCE', 'IMG_LM', 'SKY'),
     ('SCIENCE', 'LSS,N', 'SKY'),
 
-    ('CALIB', 'IMAGE,N', 'STD'),
+    # Should be IMAGE,LM, see
+    # https://github.com/AstarVienna/METIS_Simulations/pull/149
+    ('CALIB', 'LM', 'FLAT,LAMP'),
+    ('CALIB', 'N', 'FLAT,LAMP'),
 
-    ('CALIB', 'IFU', 'FLAT,LAMP'),
-    ('CALIB', 'IFU', 'FLAT,TWILIGHT'),
+    # Should be PRO, see
+    # https://github.com/AstarVienna/METIS_Simulations/issues/150
+    ('CALIB', 'IMAGE,LM', 'PERSISTENCE'),
+    ('CALIB', 'IMAGE,N', 'PERSISTENCE'),
+    ('CALIB', 'IFU', 'PERSISTENCE'),
 }
 
 
