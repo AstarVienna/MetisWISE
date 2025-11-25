@@ -49,6 +49,8 @@ def main():
         actualclass = aclass.aclass
         print(actualclass.__name__, len(actualclass.select_all()))
 
+    return myraw
+
 
 if __name__ == "__main__":
-    main()
+    dataitem = main()
