@@ -15,6 +15,8 @@ def ingest_file(filename: str) -> Optional[DataItem]:
     print()
     print(f"Ingesting {filename} .")
 
+    pp = Path(filename)
+
     to_skip = [
         "IFU_RSRF_BACKGROUND",
         "LM_SKY_BASIC_REDUCED",
@@ -38,24 +40,27 @@ def ingest_file(filename: str) -> Optional[DataItem]:
     for skip in to_skip:
         if skip in filename:
             print(f"Skipping {filename}")
-            return
+            return None
 
     # noinspection PyTypeChecker
-    q_di: Select = (DataItem.filename == filename)
+    q_di: Select = (DataItem.filename == pp.name)
     if len(q_di):
-        print(f"Found {len(q_di)} existing {filename}.")
+        print(f"Found {len(q_di)} existing {pp.name}.")
         myraw = q_di[0]
         return myraw
 
     hdus = fits.open(filename)
     if "ESO DPR CATG" in hdus[0].header:
-        myraw = Raw(filename)
-        return myraw
+        mydi = Raw(filename)
     elif "ESO PRO CATG" in hdus[0].header:
-        mypro = Pro(filename)
-        return mypro
+        mydi = Pro(filename)
     else:
         raise ValueError(f"Cannot find DPR.CATG or PRO.CATG in {filename}")
+
+    # TODO: Add some parameter to optionally store / commit.
+    mydi.store()
+    mydi.commit()
+    return mydi
 
 
 def show_help():
@@ -73,10 +78,6 @@ def main():
     for i, filename in enumerate(filenames):
         print(f"{i}/{len(filenames)}: {filename}")
         myraw = ingest_file(filename)
-        if myraw:
-            # TODO: Add some parameter to optionally store / commit.
-            myraw.store()
-            myraw.commit()
 
     print()
     for aclass in classcache.values():
