@@ -97,4 +97,29 @@ def generate_pro_classes_from_drld():
         Pro.class_from_procatg[badkey] = Pro.class_from_procatg[goodkey]
 
 
+def generate_pro_classes_from_pipeline():
+    """Use the pipeline to infer what the processed classes are."""
+    try:
+        import pymetis
+    except ImportError as e:
+        print(f"Cannot import pymetis! {e}")
+        return
+
+    # Importing the recipes should register all the DataItem classes.
+    # noinspection PyUnusedImports
+    import pymetis.recipes
+    from pymetis.classes.dataitems import DataItem as pipeDataItem
+    # noinspection PyUnresolvedReferences,PyProtectedMember
+    for class_name, di in pipeDataItem._DataItem__registry.items():
+        # assert di.pro_catg() == name
+        if class_name.endswith("_RAW"):
+            continue
+        if class_name not in Pro.class_from_procatg:
+            print(f"Pipeline DataItem that is not in the DRLD: {class_name}")
+            newclass = type(class_name, (Pro,), {})
+            Pro.class_from_procatg[class_name] = newclass
+            setattr(current_module, newclass.__name__, newclass)
+
+
 generate_pro_classes_from_drld()
+generate_pro_classes_from_pipeline()
