@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
 """Ingest a raw fits file."""
 
-from astropy.io import fits
 import sys
+
+from typing import Optional
+
+from metiswise.main.dataitem import DataItem
 from metiswise.main.raw import *
 from metiswise.main.pro import *
 from common.database.ClassCache import classcache
+from common.database.DBSelect import Select
 
-
-def ingest_file(filename: str):
+def ingest_file(filename: str) -> Optional[DataItem]:
     print()
     print(f"Ingesting {filename} .")
 
@@ -37,7 +40,8 @@ def ingest_file(filename: str):
             print(f"Skipping {filename}")
             return
 
-    q_di = (DataItem.filename == filename)
+    # noinspection PyTypeChecker
+    q_di: Select = (DataItem.filename == filename)
     if len(q_di):
         print(f"Found {len(q_di)} existing {filename}.")
         myraw = q_di[0]
@@ -65,6 +69,7 @@ def main():
 
     filenames = sys.argv[1:]
 
+    myraw = None
     for i, filename in enumerate(filenames):
         print(f"{i}/{len(filenames)}: {filename}")
         myraw = ingest_file(filename)
