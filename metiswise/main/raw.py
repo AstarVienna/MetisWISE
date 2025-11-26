@@ -182,4 +182,30 @@ def generate_raw_classes_from_drld():
         Raw.class_from_dpr[badkey] = Raw.class_from_dpr[goodkey]
 
 
+def generate_raw_classes_from_pipeline():
+    """Use the pipeline to infer what the processed classes are."""
+    try:
+        import pymetis
+    except ImportError as e:
+        print(f"Cannot import pymetis! {e}")
+        return
+
+    # Importing the recipes should register all the DataItem classes.
+    # noinspection PyUnusedImports
+    import pymetis.recipes
+    from pymetis.classes.dataitems import DataItem as pipeDataItem
+    # noinspection PyUnresolvedReferences,PyProtectedMember
+    for class_name, di in pipeDataItem._DataItem__registry.items():
+        if not class_name.endswith("_RAW"):
+            continue
+        if class_name not in classcache.keys():
+            print(f"Pipeline DataItem that is not in the DRLD: {class_name}")
+            newclass = type(class_name, (Raw,), {})
+            # TODO: Somehow get the dpr_key. Should be possible from the
+            #       workflow, but that is not part of pymetis.
+            #Raw.class_from_dpr[dpr_key] = newclass
+            setattr(current_module, newclass.__name__, newclass)
+
+
 generate_raw_classes_from_drld()
+generate_raw_classes_from_pipeline()
