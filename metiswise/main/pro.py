@@ -53,10 +53,6 @@ def generate_pro_classes_from_drld():
             # Everything non-raw is PRO, or at least should have a PRO.CATG
             continue
 
-        if di.pro_catg in Pro.class_from_procatg:
-            # Already done.
-            continue
-
         # TODO: Split up in subclasses as well?
         # classes_ok = [
         #     classa.aclass
@@ -69,13 +65,29 @@ def generate_pro_classes_from_drld():
         # Some LSS data items do not list their do_catg...
         # assert di.pro_catg == di.do_catg, f"{di.pro_catg=} != {di.do_catg=}"
 
-        # Generate a class for this raw data.
-        newclass = type(di.pro_catg, (theclass,), {})
+        # Generate a class for this processed data.
+        class_names = {
+            di.pro_catg.replace("det", det).replace("cgrph", cgrph)
+            # TODO: Split out band and detector.
+            # There is some code somewhere to do that.
+            for det in ["LM", "N", "IFU", "2RG", "GEO"]
+            # TODO: Ensure this list of cgrph is correct.
+            # Not all coronagraphs are available for all bands, so this double
+            # for loop can't really work.
+            for cgrph in ["RAVC", "CVC", "APP", "CLC", "SPP"]
+        }
+        for class_name in class_names:
+            if class_name in Pro.class_from_procatg:
+                # Already done. TODO: check why.
+                continue
+            if class_name.startswith("2"):
+                # TODO: These should always be LM righT?
+                continue
 
-        assert di.pro_catg not in Pro.class_from_procatg
-        Pro.class_from_procatg[di.pro_catg] = newclass
-        setattr(current_module, newclass.__name__, newclass)
-        # print(current_module, newclass.__name__, newclass)
+            newclass = type(class_name, (theclass,), {})
+            Pro.class_from_procatg[class_name] = newclass
+            setattr(current_module, newclass.__name__, newclass)
+            # print(current_module, newclass.__name__, newclass)
 
     correct_key_from_wrong_key = {
         # ('SCIENCE', 'IFU', 'SKY'): ('CALIB', 'IFU', 'SKY'),
@@ -85,4 +97,29 @@ def generate_pro_classes_from_drld():
         Pro.class_from_procatg[badkey] = Pro.class_from_procatg[goodkey]
 
 
+def generate_pro_classes_from_pipeline():
+    """Use the pipeline to infer what the processed classes are."""
+    try:
+        import pymetis
+    except ImportError as e:
+        print(f"Cannot import pymetis! {e}")
+        return
+
+    # Importing the recipes should register all the DataItem classes.
+    # noinspection PyUnusedImports
+    import pymetis.recipes
+    from pymetis.classes.dataitems import DataItem as pipeDataItem
+    # noinspection PyUnresolvedReferences,PyProtectedMember
+    for class_name, di in pipeDataItem._DataItem__registry.items():
+        # assert di.pro_catg() == name
+        if class_name.endswith("_RAW"):
+            continue
+        if class_name not in Pro.class_from_procatg:
+            # print(f"Pipeline DataItem that is not in the DRLD: {class_name}")
+            newclass = type(class_name, (Pro,), {})
+            Pro.class_from_procatg[class_name] = newclass
+            setattr(current_module, newclass.__name__, newclass)
+
+
 generate_pro_classes_from_drld()
+generate_pro_classes_from_pipeline()
