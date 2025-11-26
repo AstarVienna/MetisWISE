@@ -115,7 +115,7 @@ def generate_pro_classes_from_pipeline():
         if class_name.endswith("_RAW"):
             continue
         if class_name not in Pro.class_from_procatg:
-            print(f"Pipeline DataItem that is not in the DRLD: {class_name}")
+            # print(f"Pipeline DataItem that is not in the DRLD: {class_name}")
             newclass = type(class_name, (Pro,), {})
             Pro.class_from_procatg[class_name] = newclass
             setattr(current_module, newclass.__name__, newclass)

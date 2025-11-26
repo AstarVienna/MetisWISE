@@ -82,7 +82,7 @@ class Raw(DataItem):
                 print("Found", thisclass)
             self.__class__ = thisclass
             super().__init__(*args, **kwargs)
-            self.filename = filename
+            self.pathname = filename
             for prop_name in thisclass.get_persistent_properties():
                 prop = getattr(thisclass, prop_name)
                 # attrname_short_eso is e.g. "DPR.CATG"
@@ -199,7 +199,7 @@ def generate_raw_classes_from_pipeline():
         if not class_name.endswith("_RAW"):
             continue
         if class_name not in classcache.keys():
-            print(f"Pipeline DataItem that is not in the DRLD: {class_name}")
+            # print(f"Pipeline DataItem that is not in the DRLD: {class_name}")
             newclass = type(class_name, (Raw,), {})
             # TODO: Somehow get the dpr_key. Should be possible from the
             #       workflow, but that is not part of pymetis.
