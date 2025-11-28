@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Ingest a raw fits file."""
 
+import os
 import sys
 
 from typing import Optional
@@ -72,7 +73,7 @@ def main():
         show_help()
         return
 
-    filenames = sys.argv[1:]
+    filenames = sorted(sys.argv[1:], key=os.path.getctime)
 
     myraw = None
     for i, filename in enumerate(filenames):
