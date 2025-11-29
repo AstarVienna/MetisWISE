@@ -283,6 +283,11 @@ class Raw(DataItem):
                 attrname_fits = f"ESO {attrname_short_eso}".replace(".", " ")
                 if attrname_fits in header_primary:
                     value = header_primary[attrname_fits]
+                    if isinstance(value, str) and prop.prop_type != str:
+                        assert value.lower() in {"false", "true"}
+                        value = value.lower() == "true"
+                    if isinstance(value, bool):
+                        value = int(value)
                     setattr(self, prop_name, value)
         else:
             super().__init__(*args, **kwargs)                    
