@@ -4,6 +4,8 @@ from pathlib import Path
 
 from astropy.io import fits
 
+from common.database.ClassCache import classcache
+
 from metiswise.main.dataitem import DataItem, persistent
 from metiswise.main.drld import drld
 
@@ -76,8 +78,19 @@ def get_optional_dataitem_from_filename(filename):
     dis = DataItem.filename == filename
     ldis = len(dis)
     if ldis == 0:
+        # It could be that the name was too long and truncated. So lets see
+        # whether there is a DataItem where the filename starts with the same
+        # string.
+        # This can obviously lead to multiple results.
+        if len(filename) > 40 and not filename.endswith(".fits"):
+            dis = DataItem.filename.like(f"{filename}*")
+            ldis = len(dis)
+
+    if ldis == 0:
+        print(f"Warning, {ldis} objects found with filename {filename}")
         return None
-    assert ldis == 1
+    if ldis > 1:
+        print(f"Warning, {ldis} objects found with filename {filename}")
     return dis[0]
     
 
@@ -152,13 +165,9 @@ class Pro(DataItem):
                 names_raws = [fn for fn, *_ in prov_raws]
                 names_calibs = [fn for fn, *_ in prov_calibs]
 
-                # There trunkated filenames in there, so ignore those for now.
-                names_raws_fits = [n for n in names_raws if n.endswith(".fits")]
-                names_calibs_fits = [n for n in names_calibs if n.endswith(".fits")]
-
                 raws = [
                     get_optional_dataitem_from_filename(fn)
-                    for fn in names_raws_fits
+                    for fn in names_raws
                 ]
                 self.raws = raws
                 (
@@ -170,7 +179,7 @@ class Pro(DataItem):
 
                 calibs = [
                     get_optional_dataitem_from_filename(fn)
-                    for fn in names_calibs_fits
+                    for fn in names_calibs
                 ]
                 self.calibs = calibs
                 (
@@ -196,7 +205,7 @@ class Pro(DataItem):
 
 def generate_pro_classes_from_drld():
     # TODO: Fix this horrible hack.
-    # classcache_before_adding_raws = list(classcache.items())
+    classcache_before_adding_pros = list(classcache.items())
 
     for name, di in drld.dataitems.items():
         if name.endswith("_RAW"):
@@ -210,7 +219,15 @@ def generate_pro_classes_from_drld():
         # ]
         # assert len(classes_ok) == 1
         # theclass = classes_ok[0]
-        theclass = Pro
+        # theclass = Pro
+        elements_tech = ["pro"]
+        classes_ok = [
+            classa.aclass
+            for classk, classa in classcache_before_adding_pros
+            if all(a in classk.lower() for a in elements_tech)
+        ]
+        assert len(classes_ok) == 1
+        theclass = classes_ok[0]
 
         # Some LSS data items do not list their do_catg...
         # assert di.pro_catg == di.do_catg, f"{di.pro_catg=} != {di.do_catg=}"
@@ -237,7 +254,7 @@ def generate_pro_classes_from_drld():
             newclass = type(class_name, (theclass,), {})
             Pro.class_from_procatg[class_name] = newclass
             setattr(current_module, newclass.__name__, newclass)
-            # print(current_module, newclass.__name__, newclass)
+            globals()[newclass.__name__] = newclass
 
     correct_key_from_wrong_key = {
         # ('SCIENCE', 'IFU', 'SKY'): ('CALIB', 'IFU', 'SKY'),
@@ -245,6 +262,8 @@ def generate_pro_classes_from_drld():
     }
     for badkey, goodkey in correct_key_from_wrong_key.items():
         Pro.class_from_procatg[badkey] = Pro.class_from_procatg[goodkey]
+        setattr(current_module, newclass.__name__, newclass)
+        globals()[newclass.__name__] = newclass
 
 
 def generate_pro_classes_from_pipeline():
@@ -269,6 +288,7 @@ def generate_pro_classes_from_pipeline():
             newclass = type(class_name, (Pro,), {})
             Pro.class_from_procatg[class_name] = newclass
             setattr(current_module, newclass.__name__, newclass)
+            globals()[newclass.__name__] = newclass
 
 
 generate_pro_classes_from_drld()
