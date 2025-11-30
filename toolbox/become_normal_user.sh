@@ -1,4 +1,4 @@
-echo "Becoming system user."
+echo "Becoming normal user."
 export database_tablespacename="pg_default"
 export database_engine="postgresql"
 export database_port="5432"
