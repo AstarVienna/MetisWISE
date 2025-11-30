@@ -28,7 +28,7 @@ def ingest_file(filename: str) -> Optional[DataItem]:
 
         # METIS.N_LSS_SCI_RAW.2027-01-25_00_01_09/2025-11-19T11:30:24.484475/_N_LSS_SCI_FLUX_TELL_1D.fits
         "N_LSS_SCI_FLUX_TELL_1D",
-        
+
         # METIS.N_IMAGE_SCI_RAW.2027-01-25_00_01_09/2025-11-19T11:30:24.484475/_N_SCI_BKG.fits
         "N_SCI_BKG",
 
@@ -40,8 +40,9 @@ def ingest_file(filename: str) -> Optional[DataItem]:
     ]
     for skip in to_skip:
         if skip in filename:
-            print(f"Skipping {filename}")
-            return None
+            print(f"Cannot find class for {filename}")
+            # print(f"Skipping {filename}")
+            # return None
 
     # noinspection PyTypeChecker
     q_di: Select = (DataItem.filename == pp.name)
