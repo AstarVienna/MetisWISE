@@ -78,7 +78,7 @@ class Raw(DataItem):
     det1_mode = persistent("DET1.MODE", str, "fast") #
     det1_ndit = persistent("DET1.NDIT", int, 1) #
     det2_cube_mode = persistent("DET2.CUBE.MODE", bool_type, bool_false) #
-    det2_dit = persistent("DET2.DIT", int, 1) #
+    det2_dit = persistent("DET2.DIT", float, 1) #
     det2_mode = persistent("DET2.MODE", str, "high_capacity") #
     det2_ndit = persistent("DET2.NDIT", int, 1) #
     det3_cube_mode = persistent("DET3.CUBE.MODE", bool_type, bool_false) #
@@ -257,7 +257,7 @@ class Raw(DataItem):
             path_file = Path(filename)
             assert path_file.exists(), f"File {filename} does not exist."
             assert path_file.is_file(), f"File {filename} is not a file."
-            
+
             with fits.open(filename) as hdus:
                 header_primary = hdus[0].header
 
@@ -290,9 +290,9 @@ class Raw(DataItem):
                         value = int(value)
                     setattr(self, prop_name, value)
         else:
-            super().__init__(*args, **kwargs)                    
-        
-    
+            super().__init__(*args, **kwargs)
+
+
 class RawLm(Raw):
     pass
 
@@ -343,7 +343,7 @@ def generate_raw_classes_from_drld():
         dpr_key = (di.dpr_catg, di.dpr_tech, di.dpr_type)
         if dpr_key in Raw.class_from_dpr:
             continue
-        
+
         # print(dpr_key)
         # elements_tech is e.g. ['lss', 'n']
         elements_tech = [a.lower().strip() for a in di.dpr_tech.split(",")]
