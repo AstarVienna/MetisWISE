@@ -392,7 +392,9 @@ def generate_raw_classes_from_pipeline():
     import pymetis.recipes
     from pymetis.classes.dataitems import DataItem as pipeDataItem
     # noinspection PyUnresolvedReferences,PyProtectedMember
-    for class_name, di in pipeDataItem._DataItem__registry.items():
+    for class_name, di in pipeDataItem._registry.items():
+        # TODO: Make the classes hierarchical.
+        class_name = class_name.replace("{", "").replace("}", "")
         if not class_name.endswith("_RAW"):
             continue
         if class_name not in classcache.keys():
