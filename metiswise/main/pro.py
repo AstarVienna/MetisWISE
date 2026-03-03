@@ -284,7 +284,9 @@ def generate_pro_classes_from_pipeline():
         class_name = class_name.replace("{", "").replace("}", "")
         # assert di.pro_catg() == name
         # Classes that end with _RAW, and the Raw class.
-        if class_name.upper().endswith("RAW"):
+        if class_name.upper().endswith("_RAW") or class_name.lower() in {
+            "raw", "pro", "dataitem",
+        }:
             continue
         if class_name not in Pro.class_from_procatg:
             # print(f"Pipeline DataItem that is not in the DRLD: {class_name}")
