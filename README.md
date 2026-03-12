@@ -140,6 +140,18 @@ print(len(all_my_raw_flats))
 Building and Publishing
 =======================
 
+Updating the full METIS AIT Archive goes as follows.
+
+1. Ensure the [passwords on the wiki](https://metis.strw.leidenuniv.nl/wiki/doku.php?id=ait:archive) are still correct; update if needed.
+2. [Update and publish `commonwise`.](https://gitlab.astro-wise.org/buddel/commonwise/).
+3. Update and publish MetisWISE; see below.
+4. Update the [METIS_Environments](https://github.com/AstarVienna/METIS_Environments).
+5. Upgrade the database.  TODO.
+6. Update the [METIS Data Reduction Server Setup](https://gitlab.strw.leidenuniv.nl/metis-ait-leiden/metis-drs-setup).
+
+MetisWISE
+---------
+
 1. Set the version in `pyproject.toml` to the desired version.
 
 2. Build
