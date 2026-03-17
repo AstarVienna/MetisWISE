@@ -15,7 +15,12 @@ First create your Python environment through your favorite means, for example us
 
 ```bash
 export OMEGACEN_CREDENTIALS=login:password
-pip install --extra-index-url https://${OMEGACEN_CREDENTIALS}@pip.entropynaut.com/packages/ .
+pip install \
+    --extra-index-url https://ftp.eso.org/pub/dfs/pipelines/libraries \
+    --extra-index-url https://ivh.github.io/pycpl/simple/ \
+    --extra-index-url https://${OMEGACEN_CREDENTIALS}@pip.entropynaut.com/packages/ \
+    "git+https://github.com/AstarVienna/METIS_Pipeline@main#subdirectory=metisp/pymetis" \
+    metiswise
 ```
 
 See the [Containerfile](Containerfile) for more instructions.
@@ -146,8 +151,9 @@ Updating the full METIS AIT Archive goes as follows.
 2. [Update and publish `commonwise`.](https://gitlab.astro-wise.org/buddel/commonwise/).
 3. Update and publish MetisWISE; see below.
 4. Update the [METIS_Environments](https://github.com/AstarVienna/METIS_Environments).
-5. Upgrade the database.  TODO.
-6. Update the [METIS Data Reduction Server Setup](https://gitlab.strw.leidenuniv.nl/metis-ait-leiden/metis-drs-setup).
+5. Upgrade the production database.  TODO.
+6. Upgrade the database viewer and data server software.  TODO.
+7. Update the [METIS Data Reduction Server Setup](https://gitlab.strw.leidenuniv.nl/metis-ait-leiden/metis-drs-setup).
 
 MetisWISE
 ---------
@@ -160,3 +166,5 @@ MetisWISE
    ```
 
 3. Upload `dist/commonwise-*.tar.gz` to https://pip.entropynaut.com/packages/metiswise/
+
+
