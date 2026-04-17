@@ -165,6 +165,4 @@ MetisWISE
    python3 -m build
    ```
 
-3. Upload `dist/commonwise-*.tar.gz` to https://pip.entropynaut.com/packages/metiswise/
-
-
+3. Upload `dist/metiswise-*.tar.gz` to https://pip.entropynaut.com/packages/metiswise/
