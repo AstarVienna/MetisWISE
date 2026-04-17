@@ -276,15 +276,15 @@ def generate_pro_classes_from_pipeline():
 
     # Importing the recipes should register all the DataItem classes.
     # noinspection PyUnusedImports
-    import pymetis.recipes
-    from pymetis.classes.dataitems import DataItem as pipeDataItem
+    import pymetis.instruments.metis.recipes
+    from pymetis.engine.dataitems import DataItem as pipeDataItem
     # noinspection PyUnresolvedReferences,PyProtectedMember
     for class_name, di in pipeDataItem._registry.items():
         # TODO: Make the classes hierarchical.
         class_name = class_name.replace("{", "").replace("}", "")
         # assert di.pro_catg() == name
         # Classes that end with _RAW, and the Raw class.
-        if class_name.upper().endswith("RAW"):
+        if class_name.upper().endswith("RAW") or class_name.upper().startswith("QC") or "UNKNOWN" in class_name.upper():
             continue
         if class_name not in Pro.class_from_procatg:
             # print(f"Pipeline DataItem that is not in the DRLD: {class_name}")
