@@ -389,8 +389,8 @@ def generate_raw_classes_from_pipeline():
 
     # Importing the recipes should register all the DataItem classes.
     # noinspection PyUnusedImports
-    import pymetis.recipes
-    from pymetis.classes.dataitems import DataItem as pipeDataItem
+    import pymetis.instruments.metis.recipes
+    from pymetis.engine.dataitems import DataItem as pipeDataItem
     # noinspection PyUnresolvedReferences,PyProtectedMember
     for class_name, di in pipeDataItem._registry.items():
         # TODO: Make the classes hierarchical.
