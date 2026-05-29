@@ -28,6 +28,9 @@ keys_to_ignore = {
     ('CALIB', 'IMAGE,LM', 'PERSISTENCE'),
     ('CALIB', 'IMAGE,N', 'PERSISTENCE'),
     ('CALIB', 'IFU', 'PERSISTENCE'),
+
+    # TODO: File issue
+    ('CALIB', 'LMS', 'DETLIN'),
 }
 
 
