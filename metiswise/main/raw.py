@@ -28,6 +28,9 @@ keys_to_ignore = {
     ('CALIB', 'IMAGE,LM', 'PERSISTENCE'),
     ('CALIB', 'IMAGE,N', 'PERSISTENCE'),
     ('CALIB', 'IFU', 'PERSISTENCE'),
+
+    # TODO: File issue
+    ('CALIB', 'LMS', 'DETLIN'),
 }
 
 
@@ -288,6 +291,9 @@ class Raw(DataItem):
                         value = value.lower() == "true"
                     if isinstance(value, bool):
                         value = int(value)
+                    if prop.prop_type == str:
+                        # TODO: Log warning?
+                        value = str(value)
                     setattr(self, prop_name, value)
         else:
             super().__init__(*args, **kwargs)

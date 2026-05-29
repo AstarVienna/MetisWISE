@@ -19,70 +19,15 @@ pip install \
     --extra-index-url https://ftp.eso.org/pub/dfs/pipelines/libraries \
     --extra-index-url https://ivh.github.io/pycpl/simple/ \
     --extra-index-url https://${OMEGACEN_CREDENTIALS}@pip.entropynaut.com/packages/ \
-    "git+https://github.com/AstarVienna/METIS_Pipeline@main#subdirectory=metisp/pymetis" \
     metiswise
 ```
-
-See the [Containerfile](Containerfile) for more instructions.
 
 Podman
 ------
 
-The easiest way to experiment with MetisWISE is through podman.
-Docker should work similarly, but podman is recommended because docker is untested.
-This method creates a local database instance (PostgreSQL) to experiment with.
-
-First install podman and podman-compose through your favorite mechanism.
-
-Then perform these workarounds (TODO: fix these)
-- in `Containerfile`, replace the `OMEGACEN_CREDENTIALS` variable with the credentials from the wiki.
-- in `container/compose.yml`, replace directories refering to `hugo` wit the appropriate paths.
-
-```bash
-export OMEGACEN_CREDENTIALS=username:password # See https://metis.strw.leidenuniv.nl/wiki/doku.php?id=ait:archive
-podman build --secret id=OMEGACEN_CREDENTIALS,type=env -t metiswise .
-
-cd container
-podman-compose up
-```
-
-Podman compose will start four instances, that you can see with `podman ps`:
-- container_postgres_1, with the test database
-- container_dbviewer_1, with the web-based database viewer
-- container_jupyter_1, with a jupyter notebook server
-- container_metiswise_1, with bindings so X11 can be used.
-
-podman-compose should give you a link to a Jupyter Notebook that you can open.
-That is, it should print something like
-```text
-jupyter_1    |     To access the server, open this file in a browser:
-jupyter_1    |         file:///home/metis/.local/share/jupyter/runtime/jpserver-26-open.html
-jupyter_1    |     Or copy and paste one of these URLs:
-jupyter_1    |         http://26c6e4169c98:8888/tree?token=0123456789abcdef
-jupyter_1    |         http://127.0.0.1:8888/tree?token=0123456789abcdef
-```
-The last link, linking to `127.0.0.1:8888` should work, as the port is forwarded in `compose.yml`.
-
-The dbviewer is visible at http://127.0.0.1:8080/DbView.
-
-Setting up the database
------------------------
-
-The database should be setup so it has a schema.
-
-You can connect to the metiswise container through
-```bash
-podman exec -ti container_metiswise_1 bash
-```
-
-Run these commands in the container.
-They only have to be ran once, because the database is stored in a volume, so it persists.
-```
-source "${HOME}/.bashrc"
-source "${HOME}/MetisWISE/toolbox/become_system_user.sh"
-python "${HOME}/MetisWISE/metiswise/tools/dbtestsetup.py"
-```
-
+A full development environment for MetisWISE can be setup through podman
+containers.  This will create a local PostgreSQL database to play with.
+See the [METIS_Environmens repository(https://github.com/AstarVienna/METIS_Environments)
 
 MetisWISE in Python
 ===================

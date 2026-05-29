@@ -1,6 +1,6 @@
 [project]
 name = "MetisWISE"
-version = "0.0.3"
+version = "0.0.4"
 description = "MetisWISE"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -17,7 +17,13 @@ classifiers=[
     "Topic :: Scientific/Engineering :: Astronomy",
 ]
 dependencies = [
+    # From https://pip.entropynaut.com/packages
     "commonwise",
+    "metis-drld",
+    "eso-pymetis",
+
+    # Required for pycpl in pymetis: https://ivh.github.io/pycpl/simple/
+
     "astropy",
     "numpy",
     "matplotlib",
@@ -55,5 +61,8 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools]
 include-package-data = true
 
-[tool.setuptools.packages]
-find = {}
+[tool.setuptools.packages.find]
+include = ["metiswise*"]
+
+[tool.setuptools.package-data]
+metiswise = ["config/Environment.cfg"]

@@ -6,6 +6,8 @@ import sys
 
 from typing import Optional
 
+from astropy.io import fits
+
 from metiswise.main.dataitem import DataItem
 from metiswise.main.raw import *
 from metiswise.main.pro import *
