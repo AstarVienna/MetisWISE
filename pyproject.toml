@@ -17,7 +17,13 @@ classifiers=[
     "Topic :: Scientific/Engineering :: Astronomy",
 ]
 dependencies = [
+    # From https://pip.entropynaut.com/packages
     "commonwise",
+    "metis-drld",
+    "eso-pymetis",
+
+    # Required for pycpl in pymetis: https://ivh.github.io/pycpl/simple/
+
     "astropy",
     "numpy",
     "matplotlib",
