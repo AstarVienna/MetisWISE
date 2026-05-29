@@ -21,6 +21,7 @@ dependencies = [
     "commonwise",
     "metis-drld",
     "eso-pymetis",
+    "dataserverwise",
 
     # Required for pycpl in pymetis: https://ivh.github.io/pycpl/simple/
 
