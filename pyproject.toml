@@ -61,5 +61,8 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools]
 include-package-data = true
 
-[tool.setuptools.packages]
-find = {}
+[tool.setuptools.packages.find]
+include = ["metiswise*"]
+
+[tool.setuptools.package-data]
+metiswise = ["config/Environment.cfg"]
