@@ -94,6 +94,7 @@ Updating the full METIS AIT Archive goes as follows.
 
 1. Ensure the [passwords on the wiki](https://metis.strw.leidenuniv.nl/wiki/doku.php?id=ait:archive) are still correct; update if needed.
 2. [Update and publish `commonwise`.](https://gitlab.astro-wise.org/buddel/commonwise/).
+2. [Update and publish `dataserverwise`.](https://gitlab.astro-wise.org/buddel/dataserverwise/).
 3. Update and publish MetisWISE; see below.
 4. Update the [METIS_Environments](https://github.com/AstarVienna/METIS_Environments).
 5. Upgrade the production database.  TODO.
