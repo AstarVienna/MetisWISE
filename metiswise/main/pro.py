@@ -92,7 +92,7 @@ def get_optional_dataitem_from_filename(filename):
     if ldis > 1:
         print(f"Warning, {ldis} objects found with filename {filename}")
     return dis[0]
-    
+
 
 
 class Pro(DataItem):
@@ -142,7 +142,7 @@ class Pro(DataItem):
             path_file = Path(filename)
             assert path_file.exists(), f"File {filename} does not exist."
             assert path_file.is_file(), f"File {filename} is not a file."
-            
+
             with fits.open(filename) as hdus:
                 header_primary = hdus[0].header
 
@@ -200,7 +200,7 @@ class Pro(DataItem):
                     value = header_primary[attrname_fits]
                     setattr(self, prop_name, value)
         else:
-            super().__init__(*args, **kwargs)                    
+            super().__init__(*args, **kwargs)
 
 
 def generate_pro_classes_from_drld():
