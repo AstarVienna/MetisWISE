@@ -4,7 +4,7 @@ from common.config.Environment import Env
 
 
 def test_imports():
-    """Test whether the datamodel can be imported."""
+    """Test whether the data model can be imported."""
     db_engine = Env["database_engine"]
     # TODO: Enable when classcache is enabled for filebased backend.  See
     #  https://gitlab.astro-wise.org/omegacen/common/-/merge_requests/1090
@@ -12,4 +12,3 @@ def test_imports():
     # noinspection PyUnresolvedReferences
     import metiswise.main.aweimports
     Env["database_engine"] = db_engine
-
