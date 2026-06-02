@@ -287,8 +287,9 @@ class Raw(DataItem):
                 if attrname_fits in header_primary:
                     value = header_primary[attrname_fits]
                     if isinstance(value, str) and prop.prop_type != str:
-                        assert value.lower() in {"false", "true"}
-                        value = value.lower() == "true"
+                        # TODO: Does FITS allow all these differences?
+                        assert value.lower() in {"false", "true", "f", "t"}
+                        value = value.lower() in ("true", "f")
                     if isinstance(value, bool):
                         value = int(value)
                     if prop.prop_type == str:
