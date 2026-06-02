@@ -58,3 +58,6 @@ dist
 
 # space to share data between different podman containers
 container/container_test/space/
+
+# Testing and coverage
+.coverage
