@@ -6,7 +6,7 @@ from astropy.io import fits
 
 from common.database.ClassCache import classcache
 
-from metiswise.main.dataitem import DataItem, persistent
+from metiswise.main.dataitem import DataItem, persistent, DATAITEM_CACHE
 from metiswise.main.drld import drld
 
 current_module = __import__(__name__)
@@ -75,6 +75,11 @@ def get_provenance_from_header(header):
 # noinspection PyTypeChecker
 def get_optional_dataitem_from_filename(filename):
     """Get dataitem but allow it to not exist."""
+    # TODO: Just instantiate the file?
+    # This entire function should be in DataItem.
+    if filename in DATAITEM_CACHE:
+        return DATAITEM_CACHE[filename]
+
     dis = DataItem.filename == filename
     ldis = len(dis)
     if ldis == 0:

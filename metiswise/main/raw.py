@@ -277,7 +277,7 @@ class Raw(DataItem):
                 thisclass = self.class_from_dpr[dpr_key_this]
                 print("Found", thisclass)
             self.__class__ = thisclass
-            super().__init__(*args, **kwargs)
+            super().__init__(filename, *args, **kwargs)
             self.pathname = filename
             for prop_name in thisclass.get_persistent_properties():
                 prop = getattr(thisclass, prop_name)
