@@ -1,6 +1,6 @@
 [project]
 name = "MetisWISE"
-version = "0.0.4"
+version = "0.0.5a1"
 description = "MetisWISE"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -20,7 +20,7 @@ dependencies = [
     # From https://pip.entropynaut.com/packages
     "commonwise",
     "metis-drld",
-    "eso-pymetis",
+    "pymetis",
     "dataserverwise",
 
     # Required for pycpl in pymetis: https://ivh.github.io/pycpl/simple/
