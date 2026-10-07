@@ -1,6 +1,7 @@
 """Tests for `metiswise` data model."""
 
-from common.config.Environment import Env
+# from common.config.Environment import Env
+from metiswise.main.commonwrapper import Env
 
 
 def test_imports():

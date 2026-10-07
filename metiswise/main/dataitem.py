@@ -3,7 +3,8 @@ from pathlib import Path
 
 from astropy.io import fits
 
-from common.database.DataObject import DataObject, persistent
+# from common.database.DataObject import DataObject, persistent
+from metiswise.main.commonwrapper import DataObject, persistent
 
 # Cache of dataitems.
 DATAITEM_CACHE = {}

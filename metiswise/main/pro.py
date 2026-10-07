@@ -4,7 +4,8 @@ from pathlib import Path
 
 from astropy.io import fits
 
-from common.database.ClassCache import classcache
+# from common.database.ClassCache import classcache
+from metiswise.main.commonwrapper import classcache
 
 from metiswise.main.dataitem import DataItem, persistent, DATAITEM_CACHE
 from metiswise.main.drld import drld

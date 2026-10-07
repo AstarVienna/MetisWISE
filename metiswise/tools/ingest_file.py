@@ -4,15 +4,17 @@
 import os
 import sys
 
-from typing import Optional
+from typing import Optional, Any
 
 from astropy.io import fits
 
 from metiswise.main.dataitem import DataItem
 from metiswise.main.raw import *
 from metiswise.main.pro import *
-from common.database.ClassCache import classcache
-from common.database.DBSelect import Select
+# from common.database.ClassCache import classcache
+# from common.database.DBSelect import Select
+from metiswise.main.commonwrapper import classcache
+Select = Any
 
 def ingest_file(filename: str) -> Optional[DataItem]:
     print()

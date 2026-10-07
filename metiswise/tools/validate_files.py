@@ -11,8 +11,6 @@ from astropy.io import fits
 from metiswise.main.dataitem import DataItem
 from metiswise.main.raw import *
 from metiswise.main.pro import *
-from common.database.ClassCache import classcache
-from common.database.DBSelect import Select
 
 def validate_file(filename: str) -> Optional[DataItem]:
     print()
