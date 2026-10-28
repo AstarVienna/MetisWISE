@@ -34,9 +34,12 @@ class DataItem(DataObject):
             hdus = fits.open(filename)
             header = hdus[0].header
             if 'ESO PRO CATG' in header:
-                return Pro.__new__(cls, filename=filename, *args, **kwargs)
+                # TODO: `__new__` should not need any parameters right?
+                # return Pro.__new__(cls, filename=filename, *args, **kwargs)
+                return Pro.__new__(cls)
             if 'ESO DPR CATG' in header:
-                return Raw.__new__(cls, filename=filename, *args, **kwargs)
+                # return Raw.__new__(cls, filename=filename, *args, **kwargs)
+                return Raw.__new__(cls)
             return DataObject.__new__(cls)
         except (OSError, FileNotFoundError):
             # Not a FITS file
@@ -48,6 +51,13 @@ class DataItem(DataObject):
         super().__init__(filename_str, **kwargs)
         # TODO: What if object is instantiated through object_id?
         if filename is not None:
+            if self.filename == '':
+                # Should only happen with mockcommon.
+                # TODO: Perhaps put METIS Metaclass in metiswise?
+                if isinstance(filename, Path):
+                    self.filename = filename.name
+                else:
+                    self.filename = filename
             filename2 = Path(filename)
             if filename2 in DATAITEM_CACHE:
                 assert DATAITEM_CACHE[filename2] == self
