@@ -24,6 +24,9 @@ set -Eeuo pipefail
 # TODO: use a conda environment
 conda activate base
 
+export PIP_EXTRA_INDEX_URL="https://pip.entropynaut.com/packages/ https://ftp.eso.org/pub/dfs/pipelines/libraries https://ivh.github.io/pycpl/simple/"
+python -m pip install --upgrade "pip>=25.1"
+
 cd "${HOME}"
 
 git clone https://github.com/AstarVienna/ScopeSim.git
@@ -61,7 +64,7 @@ git clone https://github.com/AstarVienna/METIS_Pipeline_Test_Data.git
 # TODO: check whether directory already exists.
 #git clone https://github.com/AstarVienna/MetisWISE.git
 pushd MetisWISE
-pip install -e .
+pip install -e ".[notebook]" --group dev
 popd
 
 echo "export AWETARGET=metiswise" >> "${HOME}/.bashrc"
