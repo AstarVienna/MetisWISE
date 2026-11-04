@@ -7,19 +7,36 @@ It contains a Python library, called `metiswise`, to connect to the METIS AIT da
 Installation
 ------------
 
-MetisWISE uses dependencies from OmegaCEN which are in the process of being made open source.
-For the moment the dependencies are only only available through a password protected pip channel.
-The login credentials for that channel can be found on the [METIS AIT Archive page on the METIS wiki](https://metis.strw.leidenuniv.nl/wiki/doku.php?id=ait:archive).
+MetisWISE requires Python 3.11 to 3.13, because the METIS pipeline (`pymetis`) does not support other versions yet.
+Some dependencies are not on PyPI, so pip needs three extra package indexes:
+the OmegaCEN index at https://pip.entropynaut.com/packages/, the ESO pipeline libraries, and the `pycpl` index.
+The OmegaCEN index hosts `commonwise`, `dataserverwise`, `metis-drld` and `pymetis`.
 
 First create your Python environment through your favorite means, for example using `venv`.
 
 ```bash
-export OMEGACEN_CREDENTIALS=login:password
 pip install \
+    --extra-index-url https://pip.entropynaut.com/packages/ \
     --extra-index-url https://ftp.eso.org/pub/dfs/pipelines/libraries \
     --extra-index-url https://ivh.github.io/pycpl/simple/ \
-    --extra-index-url https://${OMEGACEN_CREDENTIALS}@pip.entropynaut.com/packages/ \
     metiswise
+```
+
+To also install Jupyter for the example notebooks, install `"metiswise[notebook]"` instead of `metiswise`.
+
+### Development installation
+
+Clone the repository and install it in editable mode, together with the `dev` dependency group (pytest, coverage and build).
+Dependency groups need pip 25.1 or newer.
+
+```bash
+git clone https://github.com/AstarVienna/MetisWISE.git
+cd MetisWISE
+pip install \
+    --extra-index-url https://pip.entropynaut.com/packages/ \
+    --extra-index-url https://ftp.eso.org/pub/dfs/pipelines/libraries \
+    --extra-index-url https://ivh.github.io/pycpl/simple/ \
+    -e ".[notebook]" --group dev
 ```
 
 Podman
