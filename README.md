@@ -39,6 +39,45 @@ pip install \
     -e ".[notebook]" --group dev
 ```
 
+### Running tests
+
+Run tests from the repository root:
+
+```bash
+python -m pytest
+```
+
+Database tests are marked `postgresql` and skipped unless you pass
+`--run-postgresql`. Install PostgreSQL with its contrib extensions (including
+`pgcrypto`) and the `postgres` dependency group, using the extra package indexes
+from the development installation above:
+
+```bash
+python -m pip install -e . --group postgres
+python -m pytest --run-postgresql
+python -m pytest --run-postgresql -m postgresql -v
+python -m pytest --run-postgresql tests/test_raw.py
+```
+
+Run as a regular user, because PostgreSQL cannot initialize a cluster as root.
+If PostgreSQL is outside your `PATH`, pass
+`--postgresql-exec=/path/to/pg_ctl`.
+
+The root `conftest.py` starts a temporary local PostgreSQL cluster on an available
+port, overrides personal database configuration, and runs
+`metiswise.tools.dbtestsetup` in the pytest process before collecting tests.
+Setup creates the persistent classes as `AWOPER`, then the harness connects as
+`AWTEST` with a generated password. The server, connections and temporary files
+are cleaned up even if setup or collection fails. No existing database or data
+server is needed. `--collect-only --run-postgresql` also initializes a database,
+because persistent classes register during import.
+
+Keep database tests in `tests/`, mark them with `pytest.mark.postgresql`, and
+import persistent classes inside test functions or fixtures so that a normal
+pytest run can skip them without connecting to a database. The initial test
+commits a `Raw()` and reads it back through `Raw.select_all()` after clearing the
+object cache.
+
 Podman
 ------
 
