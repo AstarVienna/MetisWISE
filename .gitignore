@@ -36,6 +36,9 @@ old
 data_backup
 .cache
 .pytest_cache/
+.coverage*
+htmlcov/
+reports/
 .idea/
 *.log
 *.zip
