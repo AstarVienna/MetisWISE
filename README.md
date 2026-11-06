@@ -84,6 +84,14 @@ commit. The initial test
 commits a `Raw()` and reads it back through `Raw.select_all()` after clearing the
 object cache.
 
+The GitHub Actions workflow in `.github/workflows/tests.yml` runs on pushes and
+pull requests, and can also be started manually. It uses Python 3.12 on Ubuntu,
+installs the `postgres` dependency group from the package indexes above, and runs
+pytest both without and with `--run-postgresql`. It installs the required
+`pycpl==1.0.4.post10` after the other dependencies to override the older pin in
+`eso-pymetis`'s metadata. JUnit XML reports are saved as
+the `test-reports` workflow artifact, including when tests fail.
+
 Podman
 ------
 
