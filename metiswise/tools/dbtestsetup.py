@@ -43,6 +43,17 @@ if __name__ == "__main__":
 
     from common.toolbox.backends.postgresql import dbflatremake
 
+    # Hacks to not create inverse views, as they currently do not work with the
+    # METIS data model.
+    dbflatremake.make_inverse_view = lambda x: []
+    real_recreate_awevocabulary = dbflatremake.recreate_awevocabulary
+    def fake_recreate_awevocabulary():
+        for q in real_recreate_awevocabulary():
+            # 'awoper.DataObject-' -> 'awoper.DataObject+'
+            q2 = q.replace("-'", "+'").replace("*'", "+'")
+            yield q2
+    dbflatremake.recreate_awevocabulary = fake_recreate_awevocabulary
+
     dbflatremake.create_and_execute_statements()
 
     from common.database import Security
