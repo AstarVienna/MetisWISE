@@ -71,3 +71,6 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: AstarVienna/MetisWISE
+
+      - name: Coveralls
+        uses: coverallsapp/github-action@v2
