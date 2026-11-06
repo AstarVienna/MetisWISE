@@ -51,13 +51,17 @@ jobs:
 
       # The hosted runner is a regular user. pytest starts its own temporary
       # PostgreSQL cluster; no database service or database secrets are needed.
-      - name: Run tests with PostgreSQL
-        run: python -m pytest --run-postgresql --junitxml=reports/postgresql.xml
+      - name: Run tests with PostgreSQL and coverage
+        run: |
+          python -m coverage run --branch --source=metiswise -m pytest --run-postgresql --junitxml=reports/postgresql.xml
+          python -m coverage report --show-missing
+          python -m coverage xml -o reports/coverage.xml
+          python -m coverage html -d reports/htmlcov
 
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: test-reports
-          path: reports/*.xml
+          path: reports/
           if-no-files-found: ignore

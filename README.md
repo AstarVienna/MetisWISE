@@ -84,6 +84,22 @@ commit. The initial test
 commits a `Raw()` and reads it back through `Raw.select_all()` after clearing the
 object cache.
 
+The FITS provenance parsers in `metiswise.main.provenance` are independent of the
+database and are tested in ordinary pytest runs. They are also available through
+their original imports from `metiswise.main.pro`.
+
+To measure line and branch coverage using the `coverage` package included in the
+test dependency group:
+
+```bash
+python -m coverage run --branch --source=metiswise -m pytest --run-postgresql
+python -m coverage report --show-missing
+python -m coverage html
+```
+
+Open `htmlcov/index.html` for a report with the uncovered lines highlighted.
+Omit `--run-postgresql` to measure only tests that do not need a database.
+
 The GitHub Actions workflow in `.github/workflows/tests.yml` runs on pushes to
 `main` (including merges) and pull requests, and can also be started manually.
 It uses Python 3.12 on Ubuntu,
@@ -91,7 +107,9 @@ installs the `postgres` dependency group from the package indexes above, and run
 pytest both without and with `--run-postgresql`. It installs the required
 `pycpl==1.0.4.post10` after the other dependencies to override the older pin in
 `eso-pymetis`'s metadata. JUnit XML reports are saved as
-the `test-reports` workflow artifact, including when tests fail.
+the `test-reports` workflow artifact, including when tests fail. A successful full
+test run also saves coverage XML and HTML reports in that artifact. The XML can
+be uploaded to a hosted coverage service such as Codecov or Coveralls.
 
 Podman
 ------
