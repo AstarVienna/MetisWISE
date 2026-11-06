@@ -63,18 +63,24 @@ Run as a regular user, because PostgreSQL cannot initialize a cluster as root.
 If PostgreSQL is outside your `PATH`, pass
 `--postgresql-exec=/path/to/pg_ctl`.
 
-The root `conftest.py` starts a temporary local PostgreSQL cluster on an available
-port, overrides personal database configuration, and runs
-`metiswise.tools.dbtestsetup` in the pytest process before collecting tests.
+The session fixture `metiswise_database` in the root `conftest.py` uses
+`pytest-postgresql`'s process fixture to start a temporary local PostgreSQL
+cluster on an available port. It overrides personal database configuration and
+runs `metiswise.tools.dbtestsetup` in the pytest process before the first database
+test.
 Setup creates the persistent classes as `AWOPER`, then the harness connects as
 `AWTEST` with a generated password. The server, connections and temporary files
 are cleaned up even if setup or collection fails. No existing database or data
-server is needed. `--collect-only --run-postgresql` also initializes a database,
-because persistent classes register during import.
+server is needed. Collection, including `--collect-only --run-postgresql`, does
+not start a database.
 
 Keep database tests in `tests/`, mark them with `pytest.mark.postgresql`, and
-import persistent classes inside test functions or fixtures so that a normal
-pytest run can skip them without connecting to a database. The initial test
+request `metiswise_database` as a fixture argument or with
+`pytest.mark.usefixtures("metiswise_database")`. Import persistent classes inside
+test functions or fixtures that depend on `metiswise_database`, so setup runs
+before those imports. The initialized schema is shared across the session
+because Python retains class registrations; tests should delete any objects they
+commit. The initial test
 commits a `Raw()` and reads it back through `Raw.select_all()` after clearing the
 object cache.
 

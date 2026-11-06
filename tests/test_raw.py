@@ -3,7 +3,7 @@
 import pytest
 
 
-pytestmark = pytest.mark.postgresql
+pytestmark = [pytest.mark.postgresql, pytest.mark.usefixtures("metiswise_database")]
 
 
 def test_raw_commit_and_select_all():
