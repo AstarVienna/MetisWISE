@@ -5,17 +5,9 @@ from astropy.io import fits
 
 from common.database.ClassCache import classcache
 
+from metiswise.main import provenance
 from metiswise.main.dataitem import DataItem, persistent
 from metiswise.main.drld import drld
-# Re-export the parsers for callers using their original module path.
-from metiswise.main.provenance import (
-    get_things_from_header,
-    get_raw_from_header,
-    get_calib_from_header,
-    get_param_from_header,
-    get_recipe_from_header,
-    get_provenance_from_header,
-)
 
 current_module = __import__(__name__)
 
@@ -106,10 +98,10 @@ class Pro(DataItem):
             self.pathname = filename
 
             # Get the provenance.
-            provenance = get_provenance_from_header(header_primary)
-            if provenance:
+            recipes = provenance.get_provenance_from_header(header_primary)
+            if recipes:
                 # Only the last recipe is important now.
-                prov_raws, prov_calibs, _params = provenance[-1]
+                prov_raws, prov_calibs, _params = recipes[-1]
                 names_raws = [fn for fn, *_ in prov_raws]
                 names_calibs = [fn for fn, *_ in prov_calibs]
 

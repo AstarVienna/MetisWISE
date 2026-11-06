@@ -85,8 +85,7 @@ commits a `Raw()` and reads it back through `Raw.select_all()` after clearing th
 object cache.
 
 The FITS provenance parsers in `metiswise.main.provenance` are independent of the
-database and are tested in ordinary pytest runs. They are also available through
-their original imports from `metiswise.main.pro`.
+database and are tested in ordinary pytest runs.
 
 To measure line and branch coverage using the `coverage` package included in the
 test dependency group:
