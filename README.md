@@ -7,56 +7,60 @@ It contains a Python library, called `metiswise`, to connect to the METIS AIT da
 Installation
 ------------
 
-MetisWISE requires Python 3.11 to 3.13, because the METIS pipeline (`pymetis`) does not support other versions yet.
-Some dependencies are not on PyPI, so pip needs three extra package indexes:
-the OmegaCEN index at https://pip.entropynaut.com/packages/, the ESO pipeline libraries, and the `pycpl` index.
-The OmegaCEN index hosts `commonwise`, `dataserverwise`, `metis-drld` and `pymetis`.
-
-First create your Python environment through your favorite means, for example using `venv`.
-
-```bash
-pip install \
-    --extra-index-url https://pip.entropynaut.com/packages/ \
-    --extra-index-url https://ftp.eso.org/pub/dfs/pipelines/libraries \
-    --extra-index-url https://ivh.github.io/pycpl/simple/ \
-    metiswise
-```
-
-To also install Jupyter for the example notebooks, install `"metiswise[notebook]"` instead of `metiswise`.
-
-### Development installation
-
-Clone the repository and install it in editable mode, together with the `dev` dependency group (pytest, coverage and build).
-Dependency groups need pip 25.1 or newer.
+MetisWISE requires Python 3.11 to 3.13, because the METIS pipeline (`pymetis`)
+does not support other versions yet. Python 3.12 is used for development and CI.
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/), then clone
+and install the project:
 
 ```bash
 git clone https://github.com/AstarVienna/MetisWISE.git
 cd MetisWISE
-pip install \
-    --extra-index-url https://pip.entropynaut.com/packages/ \
-    --extra-index-url https://ftp.eso.org/pub/dfs/pipelines/libraries \
-    --extra-index-url https://ivh.github.io/pycpl/simple/ \
-    -e ".[notebook]" --group dev
+uv sync --python 3.12 --no-dev
 ```
+
+uv creates a `.venv` and installs MetisWISE in editable mode. Package sources are
+configured in `pyproject.toml`:
+
+- `commonwise`, `dataserverwise`, `metis-drld`, and the METIS pipeline `pymetis`
+  come from https://pip.entropynaut.com/packages/.
+- `pycpl` comes from https://ivh.github.io/pycpl/simple/.
+- `edps`, `pyesorex`, and `adari-core` come from
+  https://ftp.eso.org/pub/dfs/pipelines/libraries.
+- Other packages come from PyPI.
+
+To include Jupyter for the example notebooks, add `--extra notebook` to `uv sync`.
+
+### Development installation
+
+From the checkout, install the default `dev` dependency group (pytest, coverage
+and build), optionally including notebooks:
+
+```bash
+uv sync --python 3.12 --extra notebook
+```
+
+`uv sync` resolves dependencies and creates or updates `uv.lock`. Commit the
+lockfile after generating it so developers and CI can share the same resolution.
+Use `uv lock --upgrade` to update dependency versions intentionally. Once a
+lockfile is committed, `uv sync --locked` verifies that it matches the project.
 
 ### Running tests
 
 Run tests from the repository root:
 
 ```bash
-python -m pytest
+uv run python -m pytest
 ```
 
 Database tests are marked `postgresql` and skipped unless you pass
 `--run-postgresql`. Install PostgreSQL with its contrib extensions (including
-`pgcrypto`) and the `postgres` dependency group, using the extra package indexes
-from the development installation above:
+`pgcrypto`) and include the `postgres` dependency group:
 
 ```bash
-python -m pip install -e . --group postgres
-python -m pytest --run-postgresql
-python -m pytest --run-postgresql -m postgresql -v
-python -m pytest --run-postgresql tests/test_raw.py
+uv sync --group postgres
+uv run --group postgres python -m pytest --run-postgresql
+uv run --group postgres python -m pytest --run-postgresql -m postgresql -v
+uv run --group postgres python -m pytest --run-postgresql tests/test_raw.py
 ```
 
 Run as a regular user, because PostgreSQL cannot initialize a cluster as root.
@@ -91,9 +95,9 @@ To measure line and branch coverage using the `coverage` package included in the
 test dependency group:
 
 ```bash
-python -m coverage run --branch --source=metiswise -m pytest --run-postgresql
-python -m coverage report --show-missing
-python -m coverage html
+uv run --group postgres python -m coverage run --branch --source=metiswise -m pytest --run-postgresql
+uv run --group postgres python -m coverage report --show-missing
+uv run --group postgres python -m coverage html
 ```
 
 Open `htmlcov/index.html` for a report with the uncovered lines highlighted.
@@ -101,11 +105,10 @@ Omit `--run-postgresql` to measure only tests that do not need a database.
 
 The GitHub Actions workflow in `.github/workflows/tests.yml` runs on pushes to
 `main` (including merges) and pull requests, and can also be started manually.
-It uses Python 3.12 on Ubuntu,
-installs the `postgres` dependency group from the package indexes above, and runs
-pytest both without and with `--run-postgresql`. It installs the required
-`pycpl==1.0.4.post10` after the other dependencies to override the older pin in
-`eso-pymetis`'s metadata. JUnit XML reports are saved as
+It uses Python 3.12 on Ubuntu, installs dependencies with
+`uv sync --group postgres`, and runs pytest both without and with
+`--run-postgresql`. CI uses the same package sources and pycpl override as local
+development. JUnit XML reports are saved as
 the `test-reports` workflow artifact, including when tests fail. A successful full
 test run also saves coverage XML and HTML reports in that artifact. The XML can
 be uploaded to a hosted coverage service such as Codecov or Coveralls.
@@ -196,7 +199,7 @@ MetisWISE
 
 2. Build
    ```
-   python3 -m build
+   uv build
    ```
 
 3. Upload `dist/metiswise-*.tar.gz` to https://pip.entropynaut.com/packages/metiswise/
