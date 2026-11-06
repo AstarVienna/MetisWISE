@@ -17,11 +17,6 @@ jobs:
   pytest:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
-    env:
-      PIP_EXTRA_INDEX_URL: >-
-        https://pip.entropynaut.com/packages/
-        https://ftp.eso.org/pub/dfs/pipelines/libraries
-        https://ivh.github.io/pycpl/simple/
     steps:
       - uses: actions/checkout@v7
         with:
@@ -30,8 +25,10 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-          cache: pip
-          cache-dependency-path: pyproject.toml
+
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
 
       - name: Install PostgreSQL
         run: |
@@ -39,24 +36,19 @@ jobs:
           sudo apt-get install --yes --no-install-recommends postgresql postgresql-contrib
 
       - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade "pip>=25.1"
-          python -m pip install -e . --group postgres
-          # eso-pymetis 0.1.0 pins an older pycpl in its metadata. Apply the
-          # required version afterwards to avoid pip's conflicting pins.
-          python -m pip install --upgrade "pycpl==1.0.4.post10"
+        run: uv sync --python 3.12 --group postgres
 
       - name: Run tests without PostgreSQL
-        run: python -m pytest --junitxml=reports/default.xml
+        run: uv run --no-sync python -m pytest --junitxml=reports/default.xml
 
       # The hosted runner is a regular user. pytest starts its own temporary
       # PostgreSQL cluster; no database service or database secrets are needed.
       - name: Run tests with PostgreSQL and coverage
         run: |
-          python -m coverage run --branch --source=metiswise -m pytest --run-postgresql --junitxml=reports/postgresql.xml
-          python -m coverage report --show-missing
-          python -m coverage xml -o reports/coverage.xml
-          python -m coverage html -d reports/htmlcov
+          uv run --no-sync python -m coverage run --branch --source=metiswise -m pytest --run-postgresql --junitxml=reports/postgresql.xml
+          uv run --no-sync python -m coverage report --show-missing
+          uv run --no-sync python -m coverage xml -o reports/coverage.xml
+          uv run --no-sync python -m coverage html -d reports/htmlcov
 
       - name: Upload test reports
         if: always()

@@ -19,13 +19,15 @@ classifiers=[
 dependencies = [
     "astropy",
     "psycopg2-binary",
-    # From https://pip.entropynaut.com/packages
     "dataserverwise",
     "commonwise",
     "metis-drld",
-    # TODO:Temporary guard so that the package from entropynaut is used instead of the one on PyPi
-    # "pymetis<0.9.0",
-    "eso-pymetis",
+    "pymetis",
+    "pycpl==1.0.4.post10",
+    # Declare pipeline dependencies here so uv can select their source indexes.
+    "edps",
+    "pyesorex",
+    "adari-core",
 ]
 
 [project.optional-dependencies]
@@ -39,6 +41,36 @@ postgres = [
     "pytest-postgresql>=7",
     "psycopg[binary]>=3",
 ]
+
+[tool.uv]
+# Older pipeline releases pin an older pycpl. Resolve the required version
+# directly instead of replacing it after installation.
+override-dependencies = ["pycpl==1.0.4.post10"]
+
+[tool.uv.sources]
+commonwise = { index = "entropynaut" }
+dataserverwise = { index = "entropynaut" }
+metis-drld = { index = "entropynaut" }
+pymetis = { index = "entropynaut" }
+pycpl = { index = "pycpl" }
+edps = { index = "eso" }
+pyesorex = { index = "eso" }
+adari-core = { index = "eso" }
+
+[[tool.uv.index]]
+name = "entropynaut"
+url = "https://pip.entropynaut.com/packages/"
+explicit = true
+
+[[tool.uv.index]]
+name = "pycpl"
+url = "https://ivh.github.io/pycpl/simple/"
+explicit = true
+
+[[tool.uv.index]]
+name = "eso"
+url = "https://ftp.eso.org/pub/dfs/pipelines/libraries"
+explicit = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
