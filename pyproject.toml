@@ -20,10 +20,10 @@ dependencies = [
     "astropy",
     "psycopg2-binary",
     "dataserverwise",
-    "commonwise",
+    "commonwise>=2026.11.0.post1",
     "metis-drld",
-    "pymetis",
-    "pycpl",
+    "pymetis>=0.4.1",
+    "pycpl>=1.0.4.post10",
     # Declare pipeline dependencies here so uv can select their source indexes.
     "edps",
     "pyesorex",
@@ -34,17 +34,12 @@ dependencies = [
 test = ["pytest", "coverage"]
 dev = [{include-group = "test"}, "build"]
 notebook = ["jupyter"]
-simulations = ["metis-simulations"]
+simulations = ["metis-simulations>=20260824.post19"]
 postgres = [
     {include-group = "test"},
     "pytest-postgresql>=7",
     "psycopg[binary]>=3",
 ]
-
-[tool.uv]
-# Older pipeline releases pin an older pycpl. Resolve the required version
-# directly instead of replacing it after installation.
-override-dependencies = ["pycpl==1.0.4.post10"]
 
 [tool.uv.sources]
 commonwise = { index = "entropynaut" }
