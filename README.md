@@ -28,7 +28,24 @@ configured in `pyproject.toml`:
   https://ftp.eso.org/pub/dfs/pipelines/libraries.
 - Other packages come from PyPI.
 
-To include Jupyter for the example notebooks, add `--extra notebook` to `uv sync`.
+To include Jupyter for the example notebooks, add `--group notebook` to `uv sync`.
+
+To install `metis-simulations` from the Entropynaut index, include the
+`simulations` dependency group:
+
+```bash
+uv sync --group simulations
+```
+
+Groups can be combined, for example `uv sync --group simulations --group postgres`.
+To install everything, including development tools, notebooks, simulations and
+database test dependencies, use uv's built-in option:
+
+```bash
+uv sync --all-groups
+```
+
+Use `uv run --all-groups ...` when running commands with all groups enabled.
 
 ### Development installation
 
@@ -36,7 +53,7 @@ From the checkout, install the default `dev` dependency group (pytest, coverage
 and build), optionally including notebooks:
 
 ```bash
-uv sync --python 3.12 --extra notebook
+uv sync --python 3.12 --group notebook
 ```
 
 `uv sync` resolves dependencies and creates or updates `uv.lock`. Commit the
@@ -112,6 +129,58 @@ development. JUnit XML reports are saved as
 the `test-reports` workflow artifact, including when tests fail. A successful full
 test run also saves coverage XML and HTML reports in that artifact. The XML can
 be uploaded to a hosted coverage service such as Codecov or Coveralls.
+
+### Simulation ingestion test
+
+The opt-in simulation test executes installed `metis-simulations` block scripts
+with the current Python interpreter, using `--small` (32×32 detector) mode. The
+default is `simulationBlocks/ESO/imgLM.py`. The scripts select their own YAML
+inputs and output layouts; the test does not call `metis_simulations.__main__`.
+
+```bash
+uv sync --group simulations --group postgres
+uv run --no-sync python -m pytest --run-postgresql --run-simulations tests/test_simulations.py -v
+```
+
+Repeat `--simulation-block` to run an arbitrary set of installed blocks in the
+specified order, then ingest their combined output in one database test:
+
+```bash
+uv run --no-sync python -m pytest --run-postgresql --run-simulations \
+    --simulation-block ESO/imgLM --simulation-block ESO/imgN \
+    tests/test_simulations.py -v
+```
+
+Names are relative to the package's `simulationBlocks` directory, with or without
+`.py`. Each block must create or update at least one FITS file. The test discovers
+those files below the output directory, ignoring untouched files from earlier
+runs, so adding another block does not require hardcoded YAML lists or output
+paths. It ingests raw and processed data, verifies the committed metadata after
+reconnecting, and cleans up database rows. Invalid model mappings and unsupported
+FITS files fail the test. `ingest_file(..., store=False)` commits metadata without
+uploading files to a data server.
+
+`MSIM_NCORES` chooses the worker count and is passed to `--nCores`; it defaults to
+one. `MSIM_YAML_DIR`, `MSIM_OUTDIR`, and `MPLBACKEND` override the input directory,
+output directory, and plotting backend. Relative input/output paths are resolved
+from the directory where pytest is invoked. By default, each block uses the
+bundled YAML directory matching its group (e.g. `YAML/ESO`), temporary output, and
+the `Agg` backend. Overrides are passed through the subprocess environment and
+do not change pytest's environment or working directory.
+
+No simulator checkout is needed. The test uses a sibling `irdb` checkout if
+present. Use `--irdb-root=/path/to/inst_pkgs` (or `DEFAULT_IRDB_LOCATION`) to select
+instrument packages containing `METIS`, `ELT`, and `Armazones`. Otherwise ScopeSim
+downloads them into the temporary directory through its Python API. Even with a
+local IRDB, additional spectra, atmospheric data, or PSFs may require network
+access.
+
+Output FITS files remain in the chosen output directory for inspection. pytest
+captures the scripts' output and reports a failure if any script exits with an
+error; use `-s` to see progress live. Ordinary runs, including the standard CI job,
+skip the simulation ingestion test unless both `--run-simulations` and
+`--run-postgresql` are supplied. The small script-runner tests run without IRDB,
+ScopeSim, or a database.
 
 Podman
 ------

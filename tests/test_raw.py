@@ -33,6 +33,41 @@ def test_raw_commit_and_select_all():
         context.delete(Raw(object_id=object_id), commit=True)
 
 
+# This is broken due to common.  TODO: fix.  See:
+# https://gitlab.astro-wise.org/omegacen/common/-/merge_requests/1146
+@pytest.mark.xfail(reason="Broken in common.")
+@pytest.mark.parametrize("class_name", ["Raw", "RawLmImage", "LM_IMAGE_STD_RAW"])
+def test_raw_is_visible_through_all_ancestor_queries(class_name):
+    from metiswise.main.aweimports import Raw, RawLmImage, LM_IMAGE_STD_RAW
+    from common.database.Context import context
+    from common.database.Database import database
+    from common.database.DataObject import DataObject
+    from metiswise.main.dataitem import DataItem
+    from metiswise.main import raw as raw_module
+
+    cls = getattr(raw_module, class_name)
+    raw = cls()
+    raw.filename = f"pytest-inheritance-{class_name}.fits"
+    raw.commit()
+    object_id = raw.object_id
+
+    database.disconnect()
+    database.connect()
+    try:
+        for ancestor in cls.__mro__:
+            if not issubclass(ancestor, DataObject):
+                continue
+            matches = [item for item in ancestor.select_all() if item.object_id == object_id]
+            assert len(matches) == 1, f"{class_name} missing from {ancestor.__name__}.select_all()"
+            assert type(matches[0]) is cls
+        # Ingestion uses this ancestor query to find already committed files.
+        matches = DataItem.filename == raw.filename
+        assert len(matches) == 1
+        assert matches[0].object_id == object_id
+    finally:
+        context.delete(cls(object_id=object_id), commit=True)
+
+
 @pytest.fixture
 def raw_fits(tmp_path):
     from astropy.io import fits
@@ -111,3 +146,27 @@ def test_raw_rejects_directory(tmp_path):
 
     with pytest.raises(AssertionError, match="is not a file"):
         Raw(tmp_path)
+
+
+@pytest.mark.parametrize("store", [True, False])
+def test_ingest_file_upload_is_optional(raw_fits, monkeypatch, store):
+    from common.database.Context import context
+    from metiswise.main.dataitem import DataItem
+    from metiswise.main.raw import Raw
+    from metiswise.tools.ingest_file import ingest_file
+
+    uploads = []
+
+    def upload(item):
+        uploads.append(item.filename)
+        item.set_stored()
+
+    monkeypatch.setattr(DataItem, "store", upload)
+    filename = raw_fits()
+    raw = ingest_file(str(filename)) if store else ingest_file(str(filename), store=False)
+    try:
+        assert isinstance(raw, Raw)
+        assert uploads == ([filename.name] if store else [])
+        assert (Raw.filename == filename.name)[0].object_id == raw.object_id
+    finally:
+        context.delete(raw, commit=True)
