@@ -130,6 +130,36 @@ the `test-reports` workflow artifact, including when tests fail. A successful fu
 test run also saves coverage XML and HTML reports in that artifact. The XML can
 be uploaded to a hosted coverage service such as Codecov or Coveralls.
 
+### Simulation ingestion test
+
+The opt-in simulation test runs the installed `metis-simulations` package's
+`ESO/imgLM` block using its bundled `scienceLM.yaml` and `stdLM.yaml`
+inputs, one worker, and the simulator's `--small` (32×32 detector) mode. It ingests
+every generated exposure into the temporary PostgreSQL database, checks the
+exposure counts and FITS metadata, and queries the committed objects after
+reconnecting. Ingestion uses `ingest_file(..., store=False)` to commit metadata
+without uploading FITS files to a data server.
+
+```bash
+uv sync --group simulations --group postgres
+uv run --no-sync python -m pytest --run-postgresql --run-simulations tests/test_simulations.py -v
+```
+
+The simulator package must include its YAML inputs and simulation blocks; no
+simulator checkout is needed. The test uses a sibling `irdb` checkout if present.
+Use `--irdb-root=/path/to/inst_pkgs` (or set
+`DEFAULT_IRDB_LOCATION`) to select instrument packages containing the `METIS`,
+`ELT`, and `Armazones` directories. If no local IRDB is available, the test
+downloads those packages with ScopeSim into its temporary directory.
+
+Even with a local IRDB, ScopeSim and its source templates may need network
+access for additional spectra, atmospheric data, or PSFs. Output FITS files and
+`simulation.log` are kept in pytest's temporary directory for inspection; failures
+include the end of the simulator log. Database rows are cleaned up after the
+test. Data-model errors are test failures, rather than expected failures or
+skips. Ordinary runs, including the standard CI job, skip this test unless
+`--run-simulations` is supplied along with `--run-postgresql`.
+
 Podman
 ------
 

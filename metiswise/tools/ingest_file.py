@@ -2,6 +2,7 @@
 """Ingest a raw fits file."""
 
 import os
+from pathlib import Path
 import sys
 
 from typing import Optional
@@ -14,7 +15,8 @@ from metiswise.main.pro import *
 from common.database.ClassCache import classcache
 from common.database.DBSelect import Select
 
-def ingest_file(filename: str) -> Optional[DataItem]:
+def ingest_file(filename: str, *, store: bool = True) -> Optional[DataItem]:
+    """Commit FITS metadata, optionally uploading the file to the data server."""
     print()
     print(f"Ingesting {filename} .")
 
@@ -53,16 +55,17 @@ def ingest_file(filename: str) -> Optional[DataItem]:
         myraw = q_di[0]
         return myraw
 
-    hdus = fits.open(filename)
-    if "ESO DPR CATG" in hdus[0].header:
+    with fits.open(filename) as hdus:
+        header = hdus[0].header
+    if "ESO DPR CATG" in header:
         mydi = Raw(filename)
-    elif "ESO PRO CATG" in hdus[0].header:
+    elif "ESO PRO CATG" in header:
         mydi = Pro(filename)
     else:
         raise ValueError(f"Cannot find DPR.CATG or PRO.CATG in {filename}")
 
-    # TODO: Add some parameter to optionally store / commit.
-    mydi.store()
+    if store:
+        mydi.store()
     mydi.commit()
     return mydi
 

@@ -111,3 +111,27 @@ def test_raw_rejects_directory(tmp_path):
 
     with pytest.raises(AssertionError, match="is not a file"):
         Raw(tmp_path)
+
+
+@pytest.mark.parametrize("store", [True, False])
+def test_ingest_file_upload_is_optional(raw_fits, monkeypatch, store):
+    from common.database.Context import context
+    from metiswise.main.dataitem import DataItem
+    from metiswise.main.raw import Raw
+    from metiswise.tools.ingest_file import ingest_file
+
+    uploads = []
+
+    def upload(item):
+        uploads.append(item.filename)
+        item.set_stored()
+
+    monkeypatch.setattr(DataItem, "store", upload)
+    filename = raw_fits()
+    raw = ingest_file(str(filename)) if store else ingest_file(str(filename), store=False)
+    try:
+        assert isinstance(raw, Raw)
+        assert uploads == ([filename.name] if store else [])
+        assert (Raw.filename == filename.name)[0].object_id == raw.object_id
+    finally:
+        context.delete(raw, commit=True)

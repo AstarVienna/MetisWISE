@@ -76,6 +76,7 @@ explicit = true
 testpaths = ["tests"]
 markers = [
     "postgresql: integration tests requiring a temporary local PostgreSQL server",
+    "simulations: real ScopeSim simulations requiring instrument data and potentially network access",
 ]
 
 [project.urls]

@@ -35,6 +35,21 @@ def pytest_addoption(parser):
         action="store_true",
         help="Run database tests against a temporary local PostgreSQL server",
     )
+    parser.addoption(
+        "--run-simulations",
+        action="store_true",
+        help="Run real ScopeSim simulations (also requires --run-postgresql)",
+    )
+    parser.addoption(
+        "--irdb-root",
+        default=None,
+        help="Directory containing METIS, ELT and Armazones instrument packages",
+    )
+
+
+def pytest_configure(config):
+    if config.getoption("--run-simulations") and not config.getoption("--run-postgresql"):
+        raise pytest.UsageError("--run-simulations also requires --run-postgresql")
 
 
 def pytest_collection_modifyitems(config, items):
@@ -42,6 +57,11 @@ def pytest_collection_modifyitems(config, items):
         skip = pytest.mark.skip(reason="requires --run-postgresql")
         for item in items:
             if "postgresql" in item.keywords:
+                item.add_marker(skip)
+    if not config.getoption("--run-simulations"):
+        skip = pytest.mark.skip(reason="requires --run-simulations")
+        for item in items:
+            if "simulations" in item.keywords:
                 item.add_marker(skip)
 
 
