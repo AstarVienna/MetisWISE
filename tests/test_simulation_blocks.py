@@ -63,9 +63,13 @@ def test_honors_custom_yaml_directory(block_package, tmp_path):
 
     filenames = run_simulation_blocks(
         block_package, ["ESO/first"], output, tmp_path, environment, configured_yaml=yaml_root,
+        extra_args=("--doCalib=2", "--doStatic"),
     )
 
     assert json.loads(filenames[0].read_text())["yaml"] == yaml_root
+    assert json.loads(filenames[0].read_text())["args"] == [
+        "--small", "--nCores", "2", "--doCalib=2", "--doStatic",
+    ]
 
 
 def test_validates_all_block_names_before_execution(block_package, tmp_path):

@@ -6,7 +6,8 @@ import sys
 import pytest
 
 
-def run_simulation_blocks(package_root, blocks, output_root, directory, environment, configured_yaml=None):
+def run_simulation_blocks(package_root, blocks, output_root, directory, environment, configured_yaml=None,
+                          *, extra_args=()):
     filenames = set()
     script_root = package_root / "simulationBlocks"
     scripts = {
@@ -28,7 +29,7 @@ def run_simulation_blocks(package_root, blocks, output_root, directory, environm
         block_environment["MSIM_YAML_DIR"] = configured_yaml if configured_yaml is not None else str(yaml_root)
         before = {path: path.stat().st_mtime_ns for path in output_root.rglob("*.fits")}
         subprocess.run(
-            [sys.executable, str(script), "--small", "--nCores", environment["MSIM_NCORES"]],
+            [sys.executable, str(script), "--small", "--nCores", environment["MSIM_NCORES"], *extra_args],
             cwd=directory, env=block_environment, check=True,
         )
         generated = {
