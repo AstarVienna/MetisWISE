@@ -1320,16 +1320,14 @@ dependencies = [
     { name = "pymetis" },
 ]
 
-[package.optional-dependencies]
-notebook = [
-    { name = "jupyter" },
-]
-
 [package.dev-dependencies]
 dev = [
     { name = "build" },
     { name = "coverage" },
     { name = "pytest" },
+]
+notebook = [
+    { name = "jupyter" },
 ]
 postgres = [
     { name = "coverage" },
@@ -1352,14 +1350,12 @@ requires-dist = [
     { name = "commonwise", index = "https://pip.entropynaut.com/packages/" },
     { name = "dataserverwise", index = "https://pip.entropynaut.com/packages/" },
     { name = "edps", index = "https://ftp.eso.org/pub/dfs/pipelines/libraries" },
-    { name = "jupyter", marker = "extra == 'notebook'" },
     { name = "metis-drld", index = "https://pip.entropynaut.com/packages/" },
     { name = "psycopg2-binary" },
     { name = "pycpl", index = "https://ivh.github.io/pycpl/simple/" },
     { name = "pyesorex", index = "https://ftp.eso.org/pub/dfs/pipelines/libraries" },
     { name = "pymetis", index = "https://pip.entropynaut.com/packages/" },
 ]
-provides-extras = ["notebook"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -1367,6 +1363,7 @@ dev = [
     { name = "coverage" },
     { name = "pytest" },
 ]
+notebook = [{ name = "jupyter" }]
 postgres = [
     { name = "coverage" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3" },
