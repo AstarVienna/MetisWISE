@@ -1,11 +1,12 @@
-"""Run the ESO LM imaging block and ingest its real FITS output."""
+"""Run installed simulation block scripts and ingest their real FITS output."""
 
-from collections import Counter
 from importlib.resources import as_file, files
 import os
 from pathlib import Path
 
 import pytest
+
+from simulation_blocks import run_simulation_blocks
 
 
 pytestmark = [pytest.mark.postgresql, pytest.mark.simulations]
@@ -13,122 +14,97 @@ PACKAGES = ("METIS", "ELT", "Armazones")
 
 
 @pytest.fixture(scope="session")
-def img_lm_files(request, tmp_path_factory):
-    """Run the installed simulator directly, using its bundled ESO YAML inputs."""
+def simulated_files(request, tmp_path_factory):
+    """Execute selected scripts with their own YAML lists and output layouts."""
     try:
         resources = files("metis_simulations")
     except ModuleNotFoundError as error:
         raise pytest.UsageError("Install the simulations dependency group to run this test") from error
-    for relative in ("simulationBlocks/ESO/imgLM.py", "YAML/ESO/scienceLM.yaml", "YAML/ESO/stdLM.yaml"):
-        if not resources.joinpath(relative).is_file():
-            raise pytest.UsageError(
-                f"Installed metis-simulations is missing {relative}; upgrade to a release with bundled resources"
-            )
 
-    directory = tmp_path_factory.mktemp("img-lm")
-    configured_irdb = request.config.getoption("--irdb-root") or os.environ.get("DEFAULT_IRDB_LOCATION")
+    blocks = request.config.getoption("--simulation-block") or ["ESO/imgLM"]
+    directory = tmp_path_factory.mktemp("simulations")
+    environment = os.environ.copy()
+    environment.setdefault("MSIM_NCORES", "1")
+    environment.setdefault("MPLBACKEND", "Agg")
+    output_root = Path(environment.get("MSIM_OUTDIR", str(directory / "output"))).expanduser().resolve()
+    environment["MSIM_OUTDIR"] = str(output_root)
+    configured_yaml = environment.get("MSIM_YAML_DIR")
+    if configured_yaml is not None:
+        configured_yaml = str(Path(configured_yaml).expanduser().resolve())
+
+    configured_irdb = request.config.getoption("--irdb-root") or environment.get("DEFAULT_IRDB_LOCATION")
     local_irdb = Path(__file__).resolve().parents[2] / "irdb"
-    download_irdb = False
     if configured_irdb:
         irdb = Path(configured_irdb).expanduser().resolve()
     elif all((local_irdb / package).is_dir() for package in PACKAGES):
         irdb = local_irdb
     else:
+        import scopesim
+
         irdb = directory / "inst_pkgs"
-        download_irdb = True
-    with as_file(resources.joinpath("YAML", "ESO")) as bundled_yaml_root:
-        # Resolve user-supplied relative paths before changing directory.
-        yaml_root = Path(os.environ.get("MSIM_YAML_DIR", str(bundled_yaml_root))).expanduser().resolve()
-        output_root = Path(os.environ.get("MSIM_OUTDIR", str(directory / "output"))).expanduser().resolve()
-        with pytest.MonkeyPatch.context() as settings:
-            settings.chdir(directory)
-            settings.setenv("MSIM_YAML_DIR", str(yaml_root))
-            if "MSIM_NCORES" not in os.environ:
-                settings.setenv("MSIM_NCORES", "1")
-            settings.setenv("MSIM_OUTDIR", str(output_root))
-            if "MPLBACKEND" not in os.environ:
-                settings.setenv("MPLBACKEND", "Agg")
-            settings.setenv("DEFAULT_IRDB_LOCATION", str(irdb))
+        scopesim.download_packages(PACKAGES, save_dir=irdb)
+    for relative in ("METIS/default.yaml", "ELT/ELT.yaml", "Armazones/Armazones.yaml"):
+        if not (irdb / relative).is_file():
+            raise pytest.UsageError(f"Missing {relative} in IRDB directory {irdb}")
+    environment["DEFAULT_IRDB_LOCATION"] = str(irdb)
 
-            import scopesim
-            from metis_simulations.__main__ import main as run_block
-
-            settings.setitem(scopesim.rc.__config__, "!SIM.file.local_packages_path", str(irdb))
-            original_search_path = list(scopesim.rc.__search_path__)
-            try:
-                if download_irdb:
-                    scopesim.download_packages(PACKAGES, save_dir=irdb)
-                for relative in ("METIS/default.yaml", "ELT/ELT.yaml", "Armazones/Armazones.yaml"):
-                    if not (irdb / relative).is_file():
-                        raise pytest.UsageError(f"Missing {relative} in IRDB directory {irdb}")
-                run_block(["ESO/imgLM", "--small", "--nCores", os.environ["MSIM_NCORES"]])
-            finally:
-                scopesim.rc.__search_path__.clear()
-                scopesim.rc.__search_path__.extend(original_search_path)
-
-        filenames = sorted((output_root / "ESO/Inst/imgLM/starfield_01").rglob("*.fits"))
-        assert filenames, "imgLM.py produced no FITS files"
-        yield filenames, yaml_root
+    with as_file(resources) as package_root:
+        return run_simulation_blocks(
+            package_root, blocks, output_root, directory, environment, configured_yaml,
+        )
 
 
-def test_img_lm_files_can_be_ingested(img_lm_files, metiswise_database):
+def test_simulation_files_can_be_ingested(simulated_files, metiswise_database):
     from astropy.io import fits
-    import yaml
 
     # Import persistent classes only after the database fixture has initialized.
     from common.database.Context import context
     from common.database.Database import database
+    from metiswise.main.dataitem import DataItem
+    from metiswise.main.pro import Pro
     from metiswise.main.raw import Raw
     from metiswise.tools.ingest_file import ingest_file
 
-    filenames, yaml_root = img_lm_files
-    expected = Counter()
-    for name in ("scienceLM.yaml", "stdLM.yaml"):
-        recipes = yaml.safe_load((yaml_root / name).read_text())
-        for recipe in recipes.values():
-            props = recipe["properties"]
-            expected[(props["catg"], props["tech"], props["type"])] += props["nObs"]
-
-    assert len(filenames) == sum(expected.values()), "imgLM.py did not produce every exposure"
+    filenames = simulated_files
+    assert len({path.name for path in filenames}) == len(filenames), "Blocks produced duplicate filenames"
     ingested = {}
     metadata = {}
-    observed = Counter()
     try:
         for filename in filenames:
             header = fits.getheader(filename)
             try:
-                raw = ingest_file(str(filename), store=False)
+                item = ingest_file(str(filename), store=False)
             except Exception as error:
                 error.add_note(f"While ingesting simulated exposure {filename}")
                 raise
-            assert isinstance(raw, Raw), filename.name
-            ingested[filename.name] = raw.object_id
-            metadata[filename.name] = {
-                "dpr_catg": header["ESO DPR CATG"],
-                "dpr_tech": header["ESO DPR TECH"],
-                "dpr_type": header["ESO DPR TYPE"],
-                "det_dit": header["ESO DET DIT"],
-                "det_ndit": header["ESO DET NDIT"],
-                "drs_filter": header["ESO DRS FILTER"],
-            }
-            observed[(raw.dpr_catg, raw.dpr_tech, raw.dpr_type)] += 1
-            assert raw.filename == filename.name
-            assert raw.det_dit == pytest.approx(header["ESO DET DIT"])
-            assert raw.det_ndit == header["ESO DET NDIT"]
-            assert raw.drs_filter == header["ESO DRS FILTER"]
-        assert observed == expected
+            assert isinstance(item, DataItem), filename.name
+            ingested[filename.name] = item.object_id
+            if isinstance(item, Raw):
+                expected = {
+                    "dpr_catg": header["ESO DPR CATG"],
+                    "dpr_tech": header["ESO DPR TECH"],
+                    "dpr_type": header["ESO DPR TYPE"],
+                    "det_dit": header["ESO DET DIT"],
+                    "det_ndit": header["ESO DET NDIT"],
+                    "drs_filter": header["ESO DRS FILTER"],
+                }
+            else:
+                assert isinstance(item, Pro), filename.name
+                expected = {"pro_catg": header["ESO PRO CATG"]}
+            metadata[filename.name] = expected
+            assert item.filename == filename.name
 
         # Verify committed rows rather than objects retained in the object cache.
         database.disconnect()
         database.connect()
-        rows = [raw for raw in Raw.select_all() if raw.filename in ingested]
+        rows = [item for item in DataItem.select_all() if item.filename in ingested]
         assert len(rows) == len(ingested)
-        retrieved = {raw.filename: raw for raw in rows}
+        retrieved = {item.filename: item for item in rows}
         assert set(retrieved) == set(ingested)
-        for name, raw in retrieved.items():
-            assert raw.object_id == ingested[name]
+        for name, item in retrieved.items():
+            assert item.object_id == ingested[name]
             for attribute, expected_value in metadata[name].items():
-                actual_value = getattr(raw, attribute)
+                actual_value = getattr(item, attribute)
                 if isinstance(expected_value, float):
                     assert actual_value == pytest.approx(expected_value), (name, attribute)
                 else:
@@ -139,6 +115,6 @@ def test_img_lm_files_can_be_ingested(img_lm_files, metiswise_database):
         # assert again.object_id == ingested[filenames[0].name]
     finally:
         database.rollback()
-        for raw in list(Raw.select_all()):
-            if raw.filename in ingested:
-                context.delete(raw, commit=True)
+        remaining = {item.filename: item for item in DataItem.select_all() if item.filename in ingested}
+        for name in reversed(ingested):
+            context.delete(remaining[name], commit=True)

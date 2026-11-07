@@ -41,6 +41,12 @@ def pytest_addoption(parser):
         help="Run real ScopeSim simulations (also requires --run-postgresql)",
     )
     parser.addoption(
+        "--simulation-block",
+        action="append",
+        default=None,
+        help="Installed simulation block to run, e.g. ESO/imgLM; repeat to run several (default: ESO/imgLM)",
+    )
+    parser.addoption(
         "--irdb-root",
         default=None,
         help="Directory containing METIS, ELT and Armazones instrument packages",

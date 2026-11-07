@@ -132,45 +132,55 @@ be uploaded to a hosted coverage service such as Codecov or Coveralls.
 
 ### Simulation ingestion test
 
-The opt-in simulation test runs the installed `metis-simulations` package's
-`ESO/imgLM` block using its bundled `scienceLM.yaml` and `stdLM.yaml`
-inputs, one worker by default, and the simulator's `--small` (32×32 detector) mode. It ingests
-every generated exposure into the temporary PostgreSQL database, checks the
-exposure counts and FITS metadata, and queries the committed objects after
-reconnecting. Ingestion uses `ingest_file(..., store=False)` to commit metadata
-without uploading FITS files to a data server.
+The opt-in simulation test executes installed `metis-simulations` block scripts
+with the current Python interpreter, using `--small` (32×32 detector) mode. The
+default is `simulationBlocks/ESO/imgLM.py`. The scripts select their own YAML
+inputs and output layouts; the test does not call `metis_simulations.__main__`.
 
 ```bash
 uv sync --group simulations --group postgres
 uv run --no-sync python -m pytest --run-postgresql --run-simulations tests/test_simulations.py -v
 ```
 
-Set `MSIM_NCORES` to choose the worker count; its value is also passed to
-`--nCores`. `MSIM_YAML_DIR`, `MSIM_OUTDIR`, and `MPLBACKEND` can override the input
-directory, output directory, and plotting backend. Relative input/output paths
-are resolved from the directory where pytest is invoked. The test reads its
-expected exposures from the selected YAML directory and checks FITS files under
-`MSIM_OUTDIR/ESO/Inst/imgLM/starfield_01`. Use a clean output directory for each
-run. Without overrides, it uses bundled inputs, temporary output, and the `Agg`
-backend. Original environment values are restored afterward.
+Repeat `--simulation-block` to run an arbitrary set of installed blocks in the
+specified order, then ingest their combined output in one database test:
 
-The simulator package must include its YAML inputs and simulation blocks; no
-simulator checkout is needed. The test uses a sibling `irdb` checkout if present.
-Use `--irdb-root=/path/to/inst_pkgs` (or set
-`DEFAULT_IRDB_LOCATION`) to select instrument packages containing the `METIS`,
-`ELT`, and `Armazones` directories. If no local IRDB is available, the test
-downloads those packages with ScopeSim into its temporary directory.
+```bash
+uv run --no-sync python -m pytest --run-postgresql --run-simulations \
+    --simulation-block ESO/imgLM --simulation-block ESO/imgN \
+    tests/test_simulations.py -v
+```
 
-Even with a local IRDB, ScopeSim and its source templates may need network
-access for additional spectra, atmospheric data, or PSFs. Downloads and the
-simulation runner are called directly in the pytest process, so pytest reports
-original exceptions and captures their output. Use `-s` to see progress live.
-Output FITS files remain in the chosen output directory for inspection. The
-environment, working directory, and ScopeSim package paths are restored after
-the simulation. Database rows are cleaned up after the
-test. Data-model errors are test failures, rather than expected failures or
-skips. Ordinary runs, including the standard CI job, skip this test unless
-`--run-simulations` is supplied along with `--run-postgresql`.
+Names are relative to the package's `simulationBlocks` directory, with or without
+`.py`. Each block must create or update at least one FITS file. The test discovers
+those files below the output directory, ignoring untouched files from earlier
+runs, so adding another block does not require hardcoded YAML lists or output
+paths. It ingests raw and processed data, verifies the committed metadata after
+reconnecting, and cleans up database rows. Invalid model mappings and unsupported
+FITS files fail the test. `ingest_file(..., store=False)` commits metadata without
+uploading files to a data server.
+
+`MSIM_NCORES` chooses the worker count and is passed to `--nCores`; it defaults to
+one. `MSIM_YAML_DIR`, `MSIM_OUTDIR`, and `MPLBACKEND` override the input directory,
+output directory, and plotting backend. Relative input/output paths are resolved
+from the directory where pytest is invoked. By default, each block uses the
+bundled YAML directory matching its group (e.g. `YAML/ESO`), temporary output, and
+the `Agg` backend. Overrides are passed through the subprocess environment and
+do not change pytest's environment or working directory.
+
+No simulator checkout is needed. The test uses a sibling `irdb` checkout if
+present. Use `--irdb-root=/path/to/inst_pkgs` (or `DEFAULT_IRDB_LOCATION`) to select
+instrument packages containing `METIS`, `ELT`, and `Armazones`. Otherwise ScopeSim
+downloads them into the temporary directory through its Python API. Even with a
+local IRDB, additional spectra, atmospheric data, or PSFs may require network
+access.
+
+Output FITS files remain in the chosen output directory for inspection. pytest
+captures the scripts' output and reports a failure if any script exits with an
+error; use `-s` to see progress live. Ordinary runs, including the standard CI job,
+skip the simulation ingestion test unless both `--run-simulations` and
+`--run-postgresql` are supplied. The small script-runner tests run without IRDB,
+ScopeSim, or a database.
 
 Podman
 ------
