@@ -3,7 +3,7 @@ name = "MetisWISE"
 version = "0.0.5"
 description = "MetisWISE"
 readme = "README.md"
-requires-python = ">=3.11, <3.14" #Matches pymetis
+requires-python = ">=3.12, <3.14" #Matches pymetis
 authors = [
     {name = "Hugo Buddelmeijer", email="hugo@buddelmeijer.nl"},
 ]
@@ -23,7 +23,7 @@ dependencies = [
     "commonwise",
     "metis-drld",
     "pymetis",
-    "pycpl==1.0.4.post10",
+    "pycpl",
     # Declare pipeline dependencies here so uv can select their source indexes.
     "edps",
     "pyesorex",
