@@ -36,13 +36,18 @@ def img_lm_files(request, tmp_path_factory):
     else:
         irdb = directory / "inst_pkgs"
         download_irdb = True
-    with as_file(resources.joinpath("YAML", "ESO")) as yaml_root:
+    with as_file(resources.joinpath("YAML", "ESO")) as bundled_yaml_root:
+        # Resolve user-supplied relative paths before changing directory.
+        yaml_root = Path(os.environ.get("MSIM_YAML_DIR", str(bundled_yaml_root))).expanduser().resolve()
+        output_root = Path(os.environ.get("MSIM_OUTDIR", str(directory / "output"))).expanduser().resolve()
         with pytest.MonkeyPatch.context() as settings:
             settings.chdir(directory)
             settings.setenv("MSIM_YAML_DIR", str(yaml_root))
-            settings.setenv("MSIM_NCORES", "1")
-            settings.setenv("MSIM_OUTDIR", str(directory / "output"))
-            settings.setenv("MPLBACKEND", "Agg")
+            if "MSIM_NCORES" not in os.environ:
+                settings.setenv("MSIM_NCORES", "1")
+            settings.setenv("MSIM_OUTDIR", str(output_root))
+            if "MPLBACKEND" not in os.environ:
+                settings.setenv("MPLBACKEND", "Agg")
             settings.setenv("DEFAULT_IRDB_LOCATION", str(irdb))
 
             import scopesim
@@ -56,12 +61,12 @@ def img_lm_files(request, tmp_path_factory):
                 for relative in ("METIS/default.yaml", "ELT/ELT.yaml", "Armazones/Armazones.yaml"):
                     if not (irdb / relative).is_file():
                         raise pytest.UsageError(f"Missing {relative} in IRDB directory {irdb}")
-                run_block(["ESO/imgLM", "--small", "--nCores", "1"])
+                run_block(["ESO/imgLM", "--small", "--nCores", os.environ["MSIM_NCORES"]])
             finally:
                 scopesim.rc.__search_path__.clear()
                 scopesim.rc.__search_path__.extend(original_search_path)
 
-        filenames = sorted((directory / "output").rglob("*.fits"))
+        filenames = sorted((output_root / "ESO/Inst/imgLM/starfield_01").rglob("*.fits"))
         assert filenames, "imgLM.py produced no FITS files"
         yield filenames, yaml_root
 

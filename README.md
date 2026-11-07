@@ -134,7 +134,7 @@ be uploaded to a hosted coverage service such as Codecov or Coveralls.
 
 The opt-in simulation test runs the installed `metis-simulations` package's
 `ESO/imgLM` block using its bundled `scienceLM.yaml` and `stdLM.yaml`
-inputs, one worker, and the simulator's `--small` (32×32 detector) mode. It ingests
+inputs, one worker by default, and the simulator's `--small` (32×32 detector) mode. It ingests
 every generated exposure into the temporary PostgreSQL database, checks the
 exposure counts and FITS metadata, and queries the committed objects after
 reconnecting. Ingestion uses `ingest_file(..., store=False)` to commit metadata
@@ -144,6 +144,15 @@ without uploading FITS files to a data server.
 uv sync --group simulations --group postgres
 uv run --no-sync python -m pytest --run-postgresql --run-simulations tests/test_simulations.py -v
 ```
+
+Set `MSIM_NCORES` to choose the worker count; its value is also passed to
+`--nCores`. `MSIM_YAML_DIR`, `MSIM_OUTDIR`, and `MPLBACKEND` can override the input
+directory, output directory, and plotting backend. Relative input/output paths
+are resolved from the directory where pytest is invoked. The test reads its
+expected exposures from the selected YAML directory and checks FITS files under
+`MSIM_OUTDIR/ESO/Inst/imgLM/starfield_01`. Use a clean output directory for each
+run. Without overrides, it uses bundled inputs, temporary output, and the `Agg`
+backend. Original environment values are restored afterward.
 
 The simulator package must include its YAML inputs and simulation blocks; no
 simulator checkout is needed. The test uses a sibling `irdb` checkout if present.
@@ -156,7 +165,7 @@ Even with a local IRDB, ScopeSim and its source templates may need network
 access for additional spectra, atmospheric data, or PSFs. Downloads and the
 simulation runner are called directly in the pytest process, so pytest reports
 original exceptions and captures their output. Use `-s` to see progress live.
-Output FITS files remain in pytest's temporary directory for inspection. The
+Output FITS files remain in the chosen output directory for inspection. The
 environment, working directory, and ScopeSim package paths are restored after
 the simulation. Database rows are cleaned up after the
 test. Data-model errors are test failures, rather than expected failures or
