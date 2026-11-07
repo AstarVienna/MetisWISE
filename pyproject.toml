@@ -30,12 +30,10 @@ dependencies = [
     "adari-core",
 ]
 
-[project.optional-dependencies]
-notebook = ["jupyter"]
-
 [dependency-groups]
 test = ["pytest", "coverage"]
 dev = [{include-group = "test"}, "build"]
+notebook = ["jupyter"]
 simulations = ["metis-simulations"]
 postgres = [
     {include-group = "test"},

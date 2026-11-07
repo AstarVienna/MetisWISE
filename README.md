@@ -28,7 +28,7 @@ configured in `pyproject.toml`:
   https://ftp.eso.org/pub/dfs/pipelines/libraries.
 - Other packages come from PyPI.
 
-To include Jupyter for the example notebooks, add `--extra notebook` to `uv sync`.
+To include Jupyter for the example notebooks, add `--group notebook` to `uv sync`.
 
 To install `metis-simulations` from the Entropynaut index, include the
 `simulations` dependency group:
@@ -38,6 +38,14 @@ uv sync --group simulations
 ```
 
 Groups can be combined, for example `uv sync --group simulations --group postgres`.
+To install everything, including development tools, notebooks, simulations and
+database test dependencies, use uv's built-in option:
+
+```bash
+uv sync --all-groups
+```
+
+Use `uv run --all-groups ...` when running commands with all groups enabled.
 
 ### Development installation
 
@@ -45,7 +53,7 @@ From the checkout, install the default `dev` dependency group (pytest, coverage
 and build), optionally including notebooks:
 
 ```bash
-uv sync --python 3.12 --extra notebook
+uv sync --python 3.12 --group notebook
 ```
 
 `uv sync` resolves dependencies and creates or updates `uv.lock`. Commit the
