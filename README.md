@@ -153,9 +153,12 @@ Use `--irdb-root=/path/to/inst_pkgs` (or set
 downloads those packages with ScopeSim into its temporary directory.
 
 Even with a local IRDB, ScopeSim and its source templates may need network
-access for additional spectra, atmospheric data, or PSFs. Output FITS files and
-`simulation.log` are kept in pytest's temporary directory for inspection; failures
-include the end of the simulator log. Database rows are cleaned up after the
+access for additional spectra, atmospheric data, or PSFs. Downloads and the
+simulation runner are called directly in the pytest process, so pytest reports
+original exceptions and captures their output. Use `-s` to see progress live.
+Output FITS files remain in pytest's temporary directory for inspection. The
+environment, working directory, and ScopeSim package paths are restored after
+the simulation. Database rows are cleaned up after the
 test. Data-model errors are test failures, rather than expected failures or
 skips. Ordinary runs, including the standard CI job, skip this test unless
 `--run-simulations` is supplied along with `--run-postgresql`.

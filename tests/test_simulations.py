@@ -4,8 +4,6 @@ from collections import Counter
 from importlib.resources import as_file, files
 import os
 from pathlib import Path
-import subprocess
-import sys
 
 import pytest
 
@@ -14,27 +12,9 @@ pytestmark = [pytest.mark.postgresql, pytest.mark.simulations]
 PACKAGES = ("METIS", "ELT", "Armazones")
 
 
-def _run(command, directory, environment, logfile):
-    """Keep verbose simulator output available on failure, without filling CI logs."""
-    with logfile.open("w") as output:
-        try:
-            result = subprocess.run(
-                command, cwd=directory, env=environment, stdout=output,
-                stderr=subprocess.STDOUT, timeout=600, check=False,
-            )
-        except subprocess.TimeoutExpired:
-            pytest.fail(f"Simulation command timed out; see {logfile}", pytrace=False)
-    if result.returncode:
-        pytest.fail(
-            f"Simulation command failed ({result.returncode}); see {logfile}\n"
-            + logfile.read_text()[-8000:],
-            pytrace=False,
-        )
-
-
 @pytest.fixture(scope="session")
 def img_lm_files(request, tmp_path_factory):
-    """Run the actual script in isolation, using its unchanged ESO YAML inputs."""
+    """Run the installed simulator directly, using its bundled ESO YAML inputs."""
     try:
         resources = files("metis_simulations")
     except ModuleNotFoundError as error:
@@ -46,38 +26,44 @@ def img_lm_files(request, tmp_path_factory):
             )
 
     directory = tmp_path_factory.mktemp("img-lm")
-    environment = os.environ.copy()
-    environment.update(
-        MSIM_NCORES="1", MSIM_OUTDIR=str(directory / "output"), MPLBACKEND="Agg",
-    )
     configured_irdb = request.config.getoption("--irdb-root") or os.environ.get("DEFAULT_IRDB_LOCATION")
     local_irdb = Path(__file__).resolve().parents[2] / "irdb"
+    download_irdb = False
     if configured_irdb:
         irdb = Path(configured_irdb).expanduser().resolve()
     elif all((local_irdb / package).is_dir() for package in PACKAGES):
         irdb = local_irdb
     else:
         irdb = directory / "inst_pkgs"
-        _run(
-            [sys.executable, "-c",
-             "import scopesim, sys; scopesim.download_packages(sys.argv[2:], save_dir=sys.argv[1])",
-             str(irdb), *PACKAGES],
-            directory, environment, directory / "download.log",
-        )
-    for relative in ("METIS/default.yaml", "ELT/ELT.yaml", "Armazones/Armazones.yaml"):
-        if not (irdb / relative).is_file():
-            raise pytest.UsageError(f"Missing {relative} in IRDB directory {irdb}")
-    environment["DEFAULT_IRDB_LOCATION"] = str(irdb)
+        download_irdb = True
     with as_file(resources.joinpath("YAML", "ESO")) as yaml_root:
-        environment["MSIM_YAML_DIR"] = str(yaml_root)
-        _run(
-            [sys.executable, "-m", "metis_simulations", "ESO/imgLM", "--small", "--nCores", "1"],
-            directory, environment, directory / "simulation.log",
-        )
-        filenames = sorted((directory / "output").rglob("*.fits"))
-        assert filenames, f"imgLM.py produced no FITS files; see {directory / 'simulation.log'}"
-        yield filenames, yaml_root
+        with pytest.MonkeyPatch.context() as settings:
+            settings.chdir(directory)
+            settings.setenv("MSIM_YAML_DIR", str(yaml_root))
+            settings.setenv("MSIM_NCORES", "1")
+            settings.setenv("MSIM_OUTDIR", str(directory / "output"))
+            settings.setenv("MPLBACKEND", "Agg")
+            settings.setenv("DEFAULT_IRDB_LOCATION", str(irdb))
 
+            import scopesim
+            from metis_simulations.__main__ import main as run_block
+
+            settings.setitem(scopesim.rc.__config__, "!SIM.file.local_packages_path", str(irdb))
+            original_search_path = list(scopesim.rc.__search_path__)
+            try:
+                if download_irdb:
+                    scopesim.download_packages(PACKAGES, save_dir=irdb)
+                for relative in ("METIS/default.yaml", "ELT/ELT.yaml", "Armazones/Armazones.yaml"):
+                    if not (irdb / relative).is_file():
+                        raise pytest.UsageError(f"Missing {relative} in IRDB directory {irdb}")
+                run_block(["ESO/imgLM", "--small", "--nCores", "1"])
+            finally:
+                scopesim.rc.__search_path__.clear()
+                scopesim.rc.__search_path__.extend(original_search_path)
+
+        filenames = sorted((directory / "output").rglob("*.fits"))
+        assert filenames, "imgLM.py produced no FITS files"
+        yield filenames, yaml_root
 
 
 def test_img_lm_files_can_be_ingested(img_lm_files, metiswise_database):
