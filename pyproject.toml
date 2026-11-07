@@ -36,6 +36,7 @@ notebook = ["jupyter"]
 [dependency-groups]
 test = ["pytest", "coverage"]
 dev = [{include-group = "test"}, "build"]
+simulations = ["metis-simulations"]
 postgres = [
     {include-group = "test"},
     "pytest-postgresql>=7",
@@ -51,6 +52,7 @@ override-dependencies = ["pycpl==1.0.4.post10"]
 commonwise = { index = "entropynaut" }
 dataserverwise = { index = "entropynaut" }
 metis-drld = { index = "entropynaut" }
+metis-simulations = { index = "entropynaut" }
 pymetis = { index = "entropynaut" }
 pycpl = { index = "pycpl" }
 edps = { index = "eso" }

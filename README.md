@@ -30,6 +30,15 @@ configured in `pyproject.toml`:
 
 To include Jupyter for the example notebooks, add `--extra notebook` to `uv sync`.
 
+To install `metis-simulations` from the Entropynaut index, include the
+`simulations` dependency group:
+
+```bash
+uv sync --group simulations
+```
+
+Groups can be combined, for example `uv sync --group simulations --group postgres`.
+
 ### Development installation
 
 From the checkout, install the default `dev` dependency group (pytest, coverage
