@@ -133,7 +133,7 @@ be uploaded to a hosted coverage service such as Codecov or Coveralls.
 ### Simulation ingestion test
 
 The opt-in simulation test executes installed `metis-simulations` block scripts
-with the current Python interpreter, using `--small` (32×32 detector) mode. The
+with the current Python interpreter, passing `--noPsf` and using full-size detectors. The
 default is `simulationBlocks/ESO/imgLM.py`. The scripts select their own YAML
 inputs and output layouts; the test does not call `metis_simulations.__main__`.
 
