@@ -1,0 +1,103 @@
+"""Exercise real EDPS scheduling without an HTTP server or scientific recipes."""
+
+import os
+import sys
+from uuid import uuid4
+
+import pytest
+
+from edps_processing import process_with_edps
+
+
+@pytest.fixture
+def edps_example(tmp_path):
+    pytest.importorskip("edps")
+    from astropy.io import fits
+
+    workflow_dir = tmp_path / f"example_{uuid4().hex}"
+    workflow_dir.mkdir()
+    (workflow_dir / "__init__.py").write_text("")
+    workflow = workflow_dir.name + ".sample_wkf"
+    (workflow_dir / "sample_wkf.py").write_text(
+        "from edps import classification_rule, data_source, task\n"
+        "raw_class = classification_rule('TEST_RAW', {'dpr.type': 'OBJECT'})\n"
+        "raw = data_source('raw').with_classification_rule(raw_class).build()\n"
+        "reduce = task('reduce').with_main_input(raw).with_recipe('test_recipe').build()\n"
+    )
+    raw = tmp_path / "raw.fits"
+    header = fits.Header({"INSTRUME": "TEST", "MJD-OBS": 60000.0,
+                          "HIERARCH ESO DPR TYPE": "OBJECT"})
+    fits.PrimaryHDU(header=header).writeto(raw)
+    command = tmp_path / "pyesorex"
+    command.write_text(
+        f"#!{sys.executable}\n"
+        "import json, os, sys\n"
+        "from pathlib import Path\n"
+        "from astropy.io import fits\n"
+        "Path('used_config.txt').write_text(os.environ['PYESOREX_CONFIG'])\n"
+        "assert 'PYESOREX_PLUGIN_DIR' not in os.environ\n"
+        "if os.environ.get('EDPS_TEST_FAIL'): raise SystemExit(1)\n"
+        "product = Path('product.fits').resolve()\n"
+        "header = fits.Header({'INSTRUME': 'TEST', 'HIERARCH ESO PRO CATG': 'TEST_PRODUCT'})\n"
+        "fits.PrimaryHDU(header=header).writeto(product)\n"
+        "manifest = next(arg.split('=', 1)[1] for arg in sys.argv if arg.startswith('--products-sof='))\n"
+        "Path(manifest).write_text(json.dumps([{'name': str(product), 'category': 'TEST_PRODUCT'}]))\n"
+    )
+    command.chmod(0o755)
+    return workflow_dir, workflow, raw, command
+
+
+def test_edps_runs_locally_and_returns_inputs_before_products(edps_example, tmp_path, monkeypatch):
+    workflow_dir, workflow, raw, command = edps_example
+    monkeypatch.setenv("PYESOREX_CONFIG", "original-config")
+    monkeypatch.setenv("PYESOREX_PLUGIN_DIR", "original-plugin-directory")
+    directory = tmp_path / "reduction"
+
+    files = process_with_edps(
+        [raw], directory, workflow_dir, workflow=workflow,
+        pyesorex=command, recipe_dir=tmp_path / "recipes", timeout=10,
+    )
+
+    assert files[0] == raw
+    assert files[1].name.startswith("PYTEST.TEST.")
+    assert files[1].suffix == ".fits"
+    assert (directory / "submission.json").is_file()
+    assert (directory / "pyesorex.rc").read_text() == f"pyesorex.recipe-dir={tmp_path / 'recipes'}\n"
+    assert next(directory.rglob("used_config.txt")).read_text() == str(directory / "pyesorex.rc")
+    assert os.environ["PYESOREX_CONFIG"] == "original-config"
+    assert os.environ["PYESOREX_PLUGIN_DIR"] == "original-plugin-directory"
+
+
+def test_edps_recipe_failures_fail_the_test(edps_example, tmp_path, monkeypatch):
+    workflow_dir, workflow, raw, command = edps_example
+    monkeypatch.setenv("EDPS_TEST_FAIL", "1")
+    with pytest.raises(AssertionError, match="EDPS jobs failed"):
+        process_with_edps(
+            [raw], tmp_path / "failed", workflow_dir, workflow=workflow,
+            pyesorex=command, recipe_dir=tmp_path / "recipes", timeout=10,
+        )
+
+
+def test_edps_cannot_pass_without_any_jobs(edps_example, tmp_path):
+    workflow_dir, workflow, _, command = edps_example
+    with pytest.raises(AssertionError, match="generated no jobs"):
+        process_with_edps(
+            [], tmp_path / "empty", workflow_dir, workflow=workflow,
+            pyesorex=command, timeout=10,
+        )
+
+
+def test_edps_reports_missing_calibration_associations(edps_example, tmp_path):
+    workflow_dir, workflow, raw, command = edps_example
+    with (workflow_dir / "sample_wkf.py").open("a") as source:
+        source.write(
+            "calib_class = classification_rule('TEST_CALIB')\n"
+            "calib = data_source('calib').with_classification_rule(calib_class).build()\n"
+            "reduce = (task('reduce').with_main_input(raw).with_associated_input(calib)\n"
+            "          .with_recipe('test_recipe').build())\n"
+        )
+    with pytest.raises(AssertionError, match="incomplete associations"):
+        process_with_edps(
+            [raw], tmp_path / "incomplete", workflow_dir, workflow=workflow,
+            pyesorex=command, timeout=10,
+        )

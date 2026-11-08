@@ -47,6 +47,22 @@ def pytest_addoption(parser):
         help="Installed simulation block to run, e.g. ESO/imgLM; repeat to run several (default: ESO/imgLM)",
     )
     parser.addoption(
+        "--run-edps", action="store_true",
+        help="Process simulated files with metis_wkf before ingestion (requires --run-simulations)",
+    )
+    parser.addoption(
+        "--edps-input", action="append", default=[],
+        help="Additional calibration FITS file or directory for EDPS; may be repeated",
+    )
+    parser.addoption(
+        "--edps-target", action="append", default=None,
+        help="Limit metis_wkf to a named task; may be repeated (default: workflow targets)",
+    )
+    parser.addoption(
+        "--edps-timeout", type=float, default=600,
+        help="Maximum time in seconds to wait for EDPS jobs (default: 600)",
+    )
+    parser.addoption(
         "--irdb-root",
         default=None,
         help="Directory containing METIS, ELT and Armazones instrument packages",
@@ -54,6 +70,8 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
+    if config.getoption("--run-edps") and not config.getoption("--run-simulations"):
+        raise pytest.UsageError("--run-edps also requires --run-simulations and --run-postgresql")
     if config.getoption("--run-simulations") and not config.getoption("--run-postgresql"):
         raise pytest.UsageError("--run-simulations also requires --run-postgresql")
 

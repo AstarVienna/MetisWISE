@@ -15,7 +15,12 @@ current_module = __import__(__name__)
 # noinspection PyTypeChecker
 def get_optional_dataitem_from_filename(filename):
     """Get dataitem but allow it to not exist."""
-    dis = DataItem.filename == filename
+    # TODO: Workaround around comomn bug
+    # See https://gitlab.astro-wise.org/omegacen/common/-/merge_requests/1146
+    #dis = DataItem.filename == filename
+    from metiswise.main.raw import Raw
+    dis = list(DataItem.filename == filename) + list(Raw.filename == filename)
+
     ldis = len(dis)
     if ldis == 0:
         # It could be that the name was too long and truncated. So lets see
@@ -23,7 +28,11 @@ def get_optional_dataitem_from_filename(filename):
         # string.
         # This can obviously lead to multiple results.
         if len(filename) > 40 and not filename.endswith(".fits"):
-            dis = DataItem.filename.like(f"{filename}*")
+            # TODO: Fix this workaround again.
+            # https://gitlab.astro-wise.org/omegacen/common/-/merge_requests/1146
+            # dis = DataItem.filename.like(f"{filename}*")
+            dis = list(DataItem.filename.like(f"{filename}*")) + \
+                list(Raw.filename.like(f"{filename}*"))
             ldis = len(dis)
 
     if ldis == 0:

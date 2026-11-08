@@ -50,7 +50,7 @@ def test_runs_multiple_scripts_and_ignores_untouched_files(block_package, tmp_pa
         data = json.loads(path.read_text())
         group = "ESO" if path.stem == "first" else "Tests"
         assert data["script"] == str(block_package / "simulationBlocks" / group / f"{path.stem}.py")
-        assert data["args"] == ["--small", "--nCores", "3"]
+        assert data["args"] == ["--noPsf", "--nCores", "3"]
         assert data["cores"] == "3"
         assert data["yaml"] == str(block_package / "YAML" / group)
     assert environment == original_environment
@@ -63,9 +63,13 @@ def test_honors_custom_yaml_directory(block_package, tmp_path):
 
     filenames = run_simulation_blocks(
         block_package, ["ESO/first"], output, tmp_path, environment, configured_yaml=yaml_root,
+        extra_args=("--doCalib=2", "--doStatic"),
     )
 
     assert json.loads(filenames[0].read_text())["yaml"] == yaml_root
+    assert json.loads(filenames[0].read_text())["args"] == [
+        "--noPsf", "--nCores", "2", "--doCalib=2", "--doStatic",
+    ]
 
 
 def test_validates_all_block_names_before_execution(block_package, tmp_path):

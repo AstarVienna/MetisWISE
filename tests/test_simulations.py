@@ -1,4 +1,4 @@
-"""Run installed simulation block scripts and ingest their real FITS output."""
+"""Simulate exposures, optionally reduce them with EDPS, and ingest the FITS files."""
 
 from importlib.resources import as_file, files
 import os
@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from edps_processing import process_with_edps
 from simulation_blocks import run_simulation_blocks
 
 
@@ -22,6 +23,13 @@ def simulated_files(request, tmp_path_factory):
         raise pytest.UsageError("Install the simulations dependency group to run this test") from error
 
     blocks = request.config.getoption("--simulation-block") or ["ESO/imgLM"]
+    if request.config.getoption("--run-edps"):
+        workflow_file = files("pymetis.instruments.metis").joinpath("workflows/metis/metis_wkf.py")
+        if not workflow_file.is_file():
+            raise pytest.UsageError(
+                "metis_wkf.py is not installed; run uv sync --group postgres --group simulations "
+                "to install the required pymetis version"
+            )
     directory = tmp_path_factory.mktemp("simulations")
     environment = os.environ.copy()
     environment.setdefault("MSIM_NCORES", "1")
@@ -49,9 +57,21 @@ def simulated_files(request, tmp_path_factory):
     environment["DEFAULT_IRDB_LOCATION"] = str(irdb)
 
     with as_file(resources) as package_root:
-        return run_simulation_blocks(
+        filenames = run_simulation_blocks(
             package_root, blocks, output_root, directory, environment, configured_yaml,
+            extra_args=("--doCalib=2", "--doStatic") if request.config.getoption("--run-edps") else (),
         )
+    if request.config.getoption("--run-edps"):
+        with as_file(files("pymetis.instruments.metis")) as pipeline_root:
+            processed = process_with_edps(
+                filenames + [Path(path).expanduser().resolve() for path in request.config.getoption("--edps-input")],
+                directory / "edps", pipeline_root / "workflows/metis",
+                targets=request.config.getoption("--edps-target"),
+                timeout=request.config.getoption("--edps-timeout"),
+                recipe_dir=pipeline_root / "recipes",
+            )
+        filenames = list(dict.fromkeys(filenames + processed))
+    return filenames
 
 
 def test_simulation_files_can_be_ingested(simulated_files, metiswise_database):
@@ -79,7 +99,11 @@ def test_simulation_files_can_be_ingested(simulated_files, metiswise_database):
                 raise
             assert isinstance(item, DataItem), filename.name
             ingested[filename.name] = item.object_id
-            if isinstance(item, Raw):
+            if "ESO PRO CATG" in header:
+                assert isinstance(item, Pro), filename.name
+                expected = {"pro_catg": header["ESO PRO CATG"]}
+            else:
+                assert isinstance(item, Raw), filename.name
                 expected = {
                     "dpr_catg": header["ESO DPR CATG"],
                     "dpr_tech": header["ESO DPR TECH"],
@@ -88,9 +112,6 @@ def test_simulation_files_can_be_ingested(simulated_files, metiswise_database):
                     "det_ndit": header["ESO DET NDIT"],
                     "drs_filter": header["ESO DRS FILTER"],
                 }
-            else:
-                assert isinstance(item, Pro), filename.name
-                expected = {"pro_catg": header["ESO PRO CATG"]}
             metadata[filename.name] = expected
             assert item.filename == filename.name
 

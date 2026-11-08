@@ -133,7 +133,7 @@ be uploaded to a hosted coverage service such as Codecov or Coveralls.
 ### Simulation ingestion test
 
 The opt-in simulation test executes installed `metis-simulations` block scripts
-with the current Python interpreter, using `--small` (32×32 detector) mode. The
+with the current Python interpreter, passing `--noPsf` and using full-size detectors. The
 default is `simulationBlocks/ESO/imgLM.py`. The scripts select their own YAML
 inputs and output layouts; the test does not call `metis_simulations.__main__`.
 
@@ -181,6 +181,50 @@ error; use `-s` to see progress live. Ordinary runs, including the standard CI j
 skip the simulation ingestion test unless both `--run-simulations` and
 `--run-postgresql` are supplied. The small script-runner tests run without IRDB,
 ScopeSim, or a database.
+
+### EDPS processing and ingestion
+
+Add `--run-edps` to process the simulated files through `metis.metis_wkf` before
+ingestion:
+
+```bash
+uv run --no-sync python -m pytest --run-postgresql --run-simulations --run-edps \
+    --simulation-block ESO/imgLM tests/test_simulations.py -v
+```
+
+With `--run-edps`, each selected simulation block receives `--doCalib=2` and
+`--doStatic`, generating two darks/flats per required setup and the static
+calibration prototypes alongside the exposures. These files are passed to EDPS
+and ingested along with the simulated science data and processing products.
+
+The workflow and recipes come from the installed `pymetis` package. Supply any
+additional calibration data required by the workflow with `--edps-input`:
+
+```bash
+uv run --no-sync python -m pytest --run-postgresql --run-simulations --run-edps \
+    --edps-input=/path/to/calibrations \
+    --edps-target metis_lm_img_basic_reduce_sci tests/test_simulations.py -v
+```
+
+Repeat `--edps-input` to provide additional calibration files or directories, or
+generate them using additional `--simulation-block` options. The automatic
+calibrations cover darks, flats, and static files; other required inputs, such as
+detector-linearity exposures, need their own simulation blocks or files.
+Repeat `--edps-target` to select tasks; omit it to use the workflow's
+default targets. `--edps-timeout` controls the wait for jobs (default 600 seconds).
+
+The test constructs `EDPS` through its Python API with an in-memory bookkeeping
+repository. It starts no HTTP server and reads no personal EDPS configuration.
+Recipe execution uses the current environment's `pyesorex`, with a temporary
+`PYESOREX_CONFIG` pointing to the installed METIS recipe directory. Products get
+unique `PYTEST` filenames to avoid collisions in the archive. QC plot generation
+is disabled for this test.
+
+Incomplete associations, failed recipes, zero jobs, and zero FITS products fail
+the test. The temporary `edps` directory contains `application.properties`,
+`pyesorex.rc`, `submission.json`, job JSON details, and recipe stdout/stderr for
+diagnosis. The archive ingests simulated inputs first, followed by the workflow's
+required calibration inputs and products in dependency order.
 
 Podman
 ------
