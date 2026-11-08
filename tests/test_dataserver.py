@@ -9,7 +9,7 @@ import pytest
 pytestmark = [pytest.mark.postgresql, pytest.mark.usefixtures("metiswise_database")]
 
 
-def test_ingested_fits_can_be_retrieved_after_removing_local_copy(tmp_path, metiswise_dataserver):
+def test_ingested_fits_can_be_retrieved_after_removing_local_copy(tmp_path, metiswise_dataserver, monkeypatch):
     from astropy.io import fits
     import numpy as np
 
@@ -44,7 +44,12 @@ def test_ingested_fits_can_be_retrieved_after_removing_local_copy(tmp_path, meti
         download = tmp_path / "download"
         download.mkdir()
         retrieved.filepath = str(download)
-        retrieved.retrieve()
+        # common's client uses pathname as the remote key and downloads into
+        # cwd. Give it the basename while running inside the destination.
+        with monkeypatch.context() as local:
+            local.chdir(download)
+            local.setattr(retrieved, "filepath", "")
+            retrieved.retrieve()
 
         restored = download / filename.name
         assert restored.is_file()
