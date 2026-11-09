@@ -74,7 +74,7 @@ def test_honors_custom_yaml_directory(block_package, tmp_path):
 
 def test_validates_all_block_names_before_execution(block_package, tmp_path):
     output = tmp_path / "output"
-    with pytest.raises(pytest.UsageError, match="not in the installed"):
+    with pytest.raises(pytest.UsageError, match="is not in"):
         run_simulation_blocks(
             block_package, ["ESO/first", "ESO/missing"], output, tmp_path, os.environ.copy(),
         )

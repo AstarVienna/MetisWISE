@@ -51,7 +51,7 @@ def pytest_addoption(parser):
         "--simulation-block",
         action="append",
         default=None,
-        help="Installed simulation block to run, e.g. ESO/imgLM; repeat to run several (default: ESO/imgLM)",
+        help="Local test observing block; repeat to run several (default: functionalPipeline; full set: minimalPipeline)",
     )
     parser.addoption(
         "--run-edps", action="store_true",

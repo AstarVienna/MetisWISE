@@ -149,27 +149,50 @@ be uploaded to a hosted coverage service such as Codecov or Coveralls.
 
 ### Simulation ingestion test
 
-The opt-in simulation test executes installed `metis-simulations` block scripts
-with the current Python interpreter, passing `--noPsf` and using full-size detectors. The
-default is `simulationBlocks/ESO/imgLM.py`. The scripts select their own YAML
-inputs and output layouts; the test does not call `metis_simulations.__main__`.
+The opt-in simulation test executes observing blocks from
+`tests/simulations/simulationBlocks`, using the installed `metis-simulations`
+Python library. The YAML inputs live in `tests/simulations/YAML`; no simulator
+checkout or packaged simulation resources are needed. The runner passes
+`--noPsf` and uses full-size detectors.
+
+Two single-night sets are available:
+
+| Block | Raw exposures | Purpose |
+| --- | ---: | --- |
+| `functionalPipeline` (default) | 24 | The previously enabled LM-only simulations, for a functional setup test. |
+| `minimalPipeline` | 78 | All entries restored, including GEO, IFU, both LSS bands and chophome, for broad data-model coverage. |
+
+Both sets have explicit darks, flats and paired linearity exposures, share
+calibrations within the night, and generate static calibration prototypes once.
+Automatic `--doCalib` generation is disabled to preserve their exposure budgets.
+The blocks can also run directly:
+
+```bash
+python tests/simulations/simulationBlocks/functionalPipeline.py --noPsf
+```
+
+Use `minimalPipeline.py` for the full set. Output is written below
+`MSIM_OUTDIR/<block>` (`output/<block>` for standalone runs without the variable).
+pytest defaults `MSIM_OUTDIR` to its temporary simulation output directory.
 
 ```bash
 uv sync --group simulations --group postgres
 uv run --no-sync python -m pytest --run-postgresql --run-simulations tests/test_simulations.py -v
 ```
 
-Repeat `--simulation-block` to run an arbitrary set of installed blocks in the
-specified order, then ingest their combined output in one database test:
+Select the larger set explicitly:
 
 ```bash
 uv run --no-sync python -m pytest --run-postgresql --run-simulations \
-    --simulation-block ESO/imgLM --simulation-block ESO/imgN \
+    --simulation-block minimalPipeline \
     tests/test_simulations.py -v
 ```
 
-Names are relative to the package's `simulationBlocks` directory, with or without
-`.py`. Each block must create or update at least one FITS file. The test discovers
+Names are relative to `tests/simulations/simulationBlocks`, with or without
+`.py`. `--simulation-block` can be repeated for additional custom blocks. Run
+the functional and full sets separately because they overlap and contain static
+files with the same names. Each block must create or update at least one FITS
+file. The test discovers
 those files below the output directory, ignoring untouched files from earlier
 runs, so adding another block does not require hardcoded YAML lists or output
 paths. It ingests raw and processed data, uploads the FITS files to the temporary
@@ -182,7 +205,7 @@ that only want to commit metadata without uploading files.
 one. `MSIM_YAML_DIR`, `MSIM_OUTDIR`, and `MPLBACKEND` override the input directory,
 output directory, and plotting backend. Relative input/output paths are resolved
 from the directory where pytest is invoked. By default, each block uses the
-bundled YAML directory matching its group (e.g. `YAML/ESO`), temporary output, and
+local `tests/simulations/YAML` directory, temporary output, and
 the `Agg` backend. Overrides are passed through the subprocess environment and
 do not change pytest's environment or working directory.
 
@@ -207,13 +230,12 @@ ingestion:
 
 ```bash
 uv run --no-sync python -m pytest --run-postgresql --run-simulations --run-edps \
-    --simulation-block ESO/imgLM tests/test_simulations.py -v
+    tests/test_simulations.py -v
 ```
 
-With `--run-edps`, each selected simulation block receives `--doCalib=2` and
-`--doStatic`, generating two darks/flats per required setup and the static
-calibration prototypes alongside the exposures. These files are passed to EDPS
-and ingested along with the simulated science data and processing products.
+The selected set's explicit calibrations and static prototypes are passed to
+EDPS and ingested with the science data and processing products. The default
+set covers LM imaging; use `--simulation-block minimalPipeline` for the full set.
 
 The workflow and recipes come from the installed `pymetis` package. Supply any
 additional calibration data required by the workflow with `--edps-input`:
@@ -225,9 +247,7 @@ uv run --no-sync python -m pytest --run-postgresql --run-simulations --run-edps 
 ```
 
 Repeat `--edps-input` to provide additional calibration files or directories, or
-generate them using additional `--simulation-block` options. The automatic
-calibrations cover darks, flats, and static files; other required inputs, such as
-detector-linearity exposures, need their own simulation blocks or files.
+generate them using additional local `--simulation-block` options.
 Repeat `--edps-target` to select tasks; omit it to use the workflow's
 default targets. `--edps-timeout` controls the wait for jobs (default 600 seconds).
 

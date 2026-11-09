@@ -1,6 +1,7 @@
-"""Simulate exposures, optionally reduce them with EDPS, and ingest the FITS files."""
+"""Run local observing blocks using metis-simulations, reduce and ingest FITS files."""
 
 from importlib.resources import as_file, files
+from importlib.util import find_spec
 import hashlib
 import os
 from pathlib import Path
@@ -18,12 +19,11 @@ PACKAGES = ("METIS", "ELT", "Armazones")
 @pytest.fixture(scope="session")
 def simulated_files(request, tmp_path_factory):
     """Execute selected scripts with their own YAML lists and output layouts."""
-    try:
-        resources = files("metis_simulations")
-    except ModuleNotFoundError as error:
-        raise pytest.UsageError("Install the simulations dependency group to run this test") from error
+    if find_spec("metis_simulations") is None:
+        raise pytest.UsageError("Install the simulations dependency group to run this test")
+    resources = Path(__file__).resolve().parent / "simulations"
 
-    blocks = request.config.getoption("--simulation-block") or ["ESO/imgLM"]
+    blocks = request.config.getoption("--simulation-block") or ["functionalPipeline"]
     if request.config.getoption("--run-edps"):
         workflow_file = files("pymetis.instruments.metis").joinpath("workflows/metis/metis_wkf.py")
         if not workflow_file.is_file():
@@ -57,11 +57,9 @@ def simulated_files(request, tmp_path_factory):
             raise pytest.UsageError(f"Missing {relative} in IRDB directory {irdb}")
     environment["DEFAULT_IRDB_LOCATION"] = str(irdb)
 
-    with as_file(resources) as package_root:
-        filenames = run_simulation_blocks(
-            package_root, blocks, output_root, directory, environment, configured_yaml,
-            extra_args=("--doCalib=2", "--doStatic") if request.config.getoption("--run-edps") else (),
-        )
+    filenames = run_simulation_blocks(
+        resources, blocks, output_root, directory, environment, configured_yaml,
+    )
     if request.config.getoption("--run-edps"):
         with as_file(files("pymetis.instruments.metis")) as pipeline_root:
             processed = process_with_edps(
