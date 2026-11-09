@@ -1305,30 +1305,34 @@ name = "metiswise"
 version = "0.0.5"
 source = { editable = "." }
 dependencies = [
-    { name = "adari-core" },
     { name = "astropy" },
     { name = "commonwise" },
-    { name = "dataserverwise" },
-    { name = "edps" },
     { name = "metis-drld" },
     { name = "psycopg2-binary" },
     { name = "pycpl" },
-    { name = "pyesorex" },
     { name = "pymetis" },
 ]
 
 [package.dev-dependencies]
 dev = [
+    { name = "adari-core" },
     { name = "build" },
     { name = "coverage" },
+    { name = "dataserverwise" },
+    { name = "edps" },
+    { name = "pyesorex" },
     { name = "pytest" },
 ]
 notebook = [
     { name = "jupyter" },
 ]
 postgres = [
+    { name = "adari-core" },
     { name = "coverage" },
+    { name = "dataserverwise" },
+    { name = "edps" },
     { name = "psycopg", extra = ["binary"] },
+    { name = "pyesorex" },
     { name = "pytest" },
     { name = "pytest-postgresql" },
 ]
@@ -1336,40 +1340,52 @@ simulations = [
     { name = "metis-simulations" },
 ]
 test = [
+    { name = "adari-core" },
     { name = "coverage" },
+    { name = "dataserverwise" },
+    { name = "edps" },
+    { name = "pyesorex" },
     { name = "pytest" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "adari-core", index = "https://ftp.eso.org/pub/dfs/pipelines/libraries" },
     { name = "astropy" },
     { name = "commonwise", specifier = ">=2026.11.0.post1", index = "https://pip.entropynaut.com/packages/" },
-    { name = "dataserverwise", index = "https://pip.entropynaut.com/packages/" },
-    { name = "edps", index = "https://ftp.eso.org/pub/dfs/pipelines/libraries" },
     { name = "metis-drld", index = "https://pip.entropynaut.com/packages/" },
     { name = "psycopg2-binary" },
     { name = "pycpl", specifier = ">=1.0.4.post10", index = "https://ivh.github.io/pycpl/simple/" },
-    { name = "pyesorex", index = "https://ftp.eso.org/pub/dfs/pipelines/libraries" },
     { name = "pymetis", specifier = ">=0.4.1", index = "https://pip.entropynaut.com/packages/" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "adari-core", index = "https://ftp.eso.org/pub/dfs/pipelines/libraries" },
     { name = "build" },
     { name = "coverage" },
+    { name = "dataserverwise", index = "https://pip.entropynaut.com/packages/" },
+    { name = "edps", index = "https://ftp.eso.org/pub/dfs/pipelines/libraries" },
+    { name = "pyesorex", index = "https://ftp.eso.org/pub/dfs/pipelines/libraries" },
     { name = "pytest" },
 ]
 notebook = [{ name = "jupyter" }]
 postgres = [
+    { name = "adari-core", index = "https://ftp.eso.org/pub/dfs/pipelines/libraries" },
     { name = "coverage" },
+    { name = "dataserverwise", index = "https://pip.entropynaut.com/packages/" },
+    { name = "edps", index = "https://ftp.eso.org/pub/dfs/pipelines/libraries" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3" },
+    { name = "pyesorex", index = "https://ftp.eso.org/pub/dfs/pipelines/libraries" },
     { name = "pytest" },
     { name = "pytest-postgresql", specifier = ">=7" },
 ]
 simulations = [{ name = "metis-simulations", specifier = ">=20260824.post19", index = "https://pip.entropynaut.com/packages/" }]
 test = [
+    { name = "adari-core", index = "https://ftp.eso.org/pub/dfs/pipelines/libraries" },
     { name = "coverage" },
+    { name = "dataserverwise", index = "https://pip.entropynaut.com/packages/" },
+    { name = "edps", index = "https://ftp.eso.org/pub/dfs/pipelines/libraries" },
+    { name = "pyesorex", index = "https://ftp.eso.org/pub/dfs/pipelines/libraries" },
     { name = "pytest" },
 ]
 

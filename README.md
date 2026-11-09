@@ -95,6 +95,23 @@ are cleaned up even if setup or collection fails. No existing database or data
 server is needed. Collection, including `--collect-only --run-postgresql`, does
 not start a database.
 
+The database fixture also requests `metiswise_dataserver`, which starts the
+installed `dataserverwise` server on a dynamically selected loopback HTTP port.
+Its storage directories, SQLite file index, configuration, and logs all reside
+under pytest's temporary `dataserver0` directory. It uses no external peers or
+direct filesystem access from the archive client. The server is stopped when
+the session ends, including after test failures. Startup errors include the
+path to `process.log`; the server's own logs are in the same directory.
+
+The archive storage client is configured for this temporary endpoint before
+tests run. A FITS round-trip test uploads and commits an exposure, removes its
+original local file, reconnects to PostgreSQL, and retrieves the file into a
+new directory. It checks both the complete file hash and the image pixels:
+
+```bash
+uv run --no-sync python -m pytest --run-postgresql tests/test_dataserver.py -v
+```
+
 Keep database tests in `tests/`, mark them with `pytest.mark.postgresql`, and
 request `metiswise_database` as a fixture argument or with
 `pytest.mark.usefixtures("metiswise_database")`. Import persistent classes inside
@@ -155,10 +172,11 @@ Names are relative to the package's `simulationBlocks` directory, with or withou
 `.py`. Each block must create or update at least one FITS file. The test discovers
 those files below the output directory, ignoring untouched files from earlier
 runs, so adding another block does not require hardcoded YAML lists or output
-paths. It ingests raw and processed data, verifies the committed metadata after
-reconnecting, and cleans up database rows. Invalid model mappings and unsupported
-FITS files fail the test. `ingest_file(..., store=False)` commits metadata without
-uploading files to a data server.
+paths. It ingests raw and processed data, uploads the FITS files to the temporary
+dataserver, and downloads each into a separate directory to compare SHA-256
+hashes. Invalid model mappings, unsupported FITS files, and failed transfers
+fail the test. `ingest_file(..., store=False)` is available for callers
+that only want to commit metadata without uploading files.
 
 `MSIM_NCORES` chooses the worker count and is passed to `--nCores`; it defaults to
 one. `MSIM_YAML_DIR`, `MSIM_OUTDIR`, and `MPLBACKEND` override the input directory,

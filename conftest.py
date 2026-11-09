@@ -1,12 +1,19 @@
 """Session fixtures for an optional, disposable MetisWISE database."""
 
 import configparser
+from http.client import HTTPConnection
+from importlib.util import find_spec
 from importlib.resources import files
 import os
 from pathlib import Path
 import runpy
 import secrets
+import signal
+import socket
+import subprocess
 import sys
+import time
+from types import SimpleNamespace
 
 import pytest
 
@@ -103,7 +110,74 @@ def _disconnect_database():
 
 
 @pytest.fixture(scope="session")
-def metiswise_database(request, tmp_path_factory):
+def metiswise_dataserver(request, tmp_path_factory):
+    """Run the installed dataserver with private storage and a local SQLite index."""
+    if not request.config.getoption("--run-postgresql"):
+        pytest.skip("requires --run-postgresql")
+    if find_spec("dataserver") is None:
+        raise pytest.UsageError("Install dataserverwise to run the archive integration tests")
+
+    directory = tmp_path_factory.mktemp("dataserver")
+    for name in ("sdata", "idata", "pdata", "cdata"):
+        (directory / name).mkdir()
+    with socket.socket() as reservation:
+        reservation.bind(("127.0.0.1", 0))
+        port = reservation.getsockname()[1]
+    configuration = configparser.ConfigParser(interpolation=None)
+    configuration.read_dict({
+        "global": {
+            "workingdirectory": str(directory), "hosts": "127.0.0.1",
+            "ports": str(port), "secureports": "", "servers": "127.0.0.1",
+            "ldbmode": "0", "ldbtype": "1", "dsdir": ".awds",
+            "logfile": str(directory / "dataserver.log"),
+            "spacelimit": "1", "warnfactor": "0", "directdataaccess": "False",
+            "encryption": "pynacl",
+        },
+        "localhost": {},
+    })
+    config_path = directory / "dataserver.ini"
+    with config_path.open("w") as config_file:
+        configuration.write(config_file)
+    log_path = directory / "process.log"
+    with log_path.open("wb") as log:
+        process = subprocess.Popen(
+            [sys.executable, "-m", "dataserver.main", "--config", str(config_path)],
+            cwd=directory, stdout=log, stderr=subprocess.STDOUT, start_new_session=True,
+        )
+        try:
+            deadline = time.monotonic() + 20
+            while process.poll() is None and time.monotonic() < deadline:
+                connection = HTTPConnection("127.0.0.1", port, timeout=0.25)
+                try:
+                    connection.request("GET", "/pid")
+                    response = connection.getresponse()
+                    if response.status == 200 and response.read().strip() == str(process.pid).encode():
+                        break
+                except (OSError, ValueError):
+                    pass
+                finally:
+                    connection.close()
+                time.sleep(0.05)
+            else:
+                pytest.fail(f"Dataserver failed to start; see {log_path}\n{log_path.read_text(errors='replace')}")
+            yield SimpleNamespace(host="127.0.0.1", port=port, directory=directory)
+        finally:
+            try:
+                os.killpg(process.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            try:
+                process.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                process.wait()
+
+
+@pytest.fixture(scope="session")
+def metiswise_database(request, tmp_path_factory, metiswise_dataserver):
     """Initialize once, before tests import any persistent classes.
 
     Class registrations survive for the Python session, so the schema must too.
@@ -143,9 +217,11 @@ def metiswise_database(request, tmp_path_factory):
         database_password=server.password,
         ask_administrator_password="",
         project="SIM (1)",
-        data_server="127.0.0.1",
-        data_port="8000",
+        storage_engine="astro-wise",
+        data_server=metiswise_dataserver.host,
+        data_port=str(metiswise_dataserver.port),
         data_protocol="http",
+        data_path="",
         log_dir=str(directory),
     )
     with pytest.MonkeyPatch.context() as monkeypatch:
@@ -154,11 +230,24 @@ def metiswise_database(request, tmp_path_factory):
                 monkeypatch.delenv(key)
         for key, value in settings.items():
             monkeypatch.setenv(key, value)
+        storage = None
         try:
             _initialize_database(server)
+            from common.database.DataObject import DataObject
+            from common.net.ds.client import Storage
+
+            storage = Storage(
+                metiswise_dataserver.host, metiswise_dataserver.port,
+                user_id="AWTEST", secure=False, timeout=10, sleep=0.1,
+            )
+            monkeypatch.setattr(DataObject, "storage", storage)
             yield
         finally:
-            _disconnect_database()
+            try:
+                if storage is not None and hasattr(storage, "conn"):
+                    storage.conn.close()
+            finally:
+                _disconnect_database()
 
 
 def _initialize_database(server):

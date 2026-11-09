@@ -1,6 +1,7 @@
 """Simulate exposures, optionally reduce them with EDPS, and ingest the FITS files."""
 
 from importlib.resources import as_file, files
+import hashlib
 import os
 from pathlib import Path
 
@@ -74,7 +75,7 @@ def simulated_files(request, tmp_path_factory):
     return filenames
 
 
-def test_simulation_files_can_be_ingested(simulated_files, metiswise_database):
+def test_simulation_files_can_be_ingested(simulated_files, metiswise_database, tmp_path, monkeypatch):
     from astropy.io import fits
 
     # Import persistent classes only after the database fixture has initialized.
@@ -93,11 +94,25 @@ def test_simulation_files_can_be_ingested(simulated_files, metiswise_database):
         for filename in filenames:
             header = fits.getheader(filename)
             try:
-                item = ingest_file(str(filename), store=False)
+                item = ingest_file(str(filename))
             except Exception as error:
                 error.add_note(f"While ingesting simulated exposure {filename}")
                 raise
             assert isinstance(item, DataItem), filename.name
+            assert item.is_stored(), filename.name
+            item.filepath = str(tmp_path)
+            # Retrieve by basename into cwd, as expected by common's client.
+            with monkeypatch.context() as local:
+                local.chdir(tmp_path)
+                local.setattr(item, "filepath", "")
+                item.retrieve()
+            downloaded = tmp_path / filename.name
+            assert downloaded.is_file(), filename.name
+            with filename.open("rb") as original, downloaded.open("rb") as restored:
+                assert (
+                    hashlib.file_digest(original, "sha256").digest()
+                    == hashlib.file_digest(restored, "sha256").digest()
+                ), filename.name
             ingested[filename.name] = item.object_id
             if "ESO PRO CATG" in header:
                 assert isinstance(item, Pro), filename.name

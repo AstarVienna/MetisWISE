@@ -19,19 +19,21 @@ classifiers=[
 dependencies = [
     "astropy",
     "psycopg2-binary",
-    "dataserverwise",
     "commonwise>=2026.11.0.post1",
     "metis-drld",
     "pymetis>=0.4.1",
     "pycpl>=1.0.4.post10",
-    # Declare pipeline dependencies here so uv can select their source indexes.
+]
+
+[dependency-groups]
+test = [
+    "pytest",
+    "coverage",
+    "dataserverwise",
     "edps",
     "pyesorex",
     "adari-core",
 ]
-
-[dependency-groups]
-test = ["pytest", "coverage"]
 dev = [{include-group = "test"}, "build"]
 notebook = ["jupyter"]
 simulations = ["metis-simulations>=20260824.post19"]
