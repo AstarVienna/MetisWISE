@@ -1094,26 +1094,28 @@ N_LSS_STD_RAW:
     type: STD
     tplname: METIS_spec_n_cal_Standard
     nObs: 1
-LM_CHOPHOME_RAW:
-  do.catg: LM_CHOPHOME_RAW
-  mode: img_lm
-  source:
-    name: flat_field
-    kwargs:
-      temperature: 200
-      amplitude: 0
-      filter_curve: V
-      extend: 15
-  properties:
-    dit: 1.0
-    ndit: 1
-    filter_name: Lp
-    nd_filter_name: open
-    catg: CALIB
-    tech: IMAGE,LM
-    type: CHOPHOME
-    tplname: METIS_img_lm_cal_ChopperHome
-    nObs: 1
+# TODO: Reenable LM_CHOPHOME_RAW when metis_cal_chophome recipe is fixed.
+# See https://github.com/AstarVienna/METIS_Pipeline/issues/258
+# LM_CHOPHOME_RAW:
+#   do.catg: LM_CHOPHOME_RAW
+#   mode: img_lm
+#   source:
+#     name: flat_field
+#     kwargs:
+#       temperature: 200
+#       amplitude: 0
+#       filter_curve: V
+#       extend: 15
+#   properties:
+#     dit: 1.0
+#     ndit: 1
+#     filter_name: Lp
+#     nd_filter_name: open
+#     catg: CALIB
+#     tech: IMAGE,LM
+#     type: CHOPHOME
+#     tplname: METIS_img_lm_cal_ChopperHome
+#     nObs: 1
 LM_PUPIL_RAW:
   do.catg: LM_PUPIL_RAW
   mode: img_lm

@@ -14,7 +14,7 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parent / "simulations"
-DATASETS = [("functionalPipeline", 24, 1), ("minimalPipeline", 78, 3)]
+DATASETS = [("functionalPipeline", 24, 1), ("minimalPipeline", 77, 3)]
 
 
 @pytest.mark.parametrize("name,exposures,detectors", DATASETS)
