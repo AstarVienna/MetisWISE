@@ -52,11 +52,14 @@ def test_edps_runs_locally_and_returns_inputs_before_products(edps_example, tmp_
     workflow_dir, workflow, raw, command = edps_example
     monkeypatch.setenv("PYESOREX_CONFIG", "original-config")
     monkeypatch.setenv("PYESOREX_PLUGIN_DIR", "original-plugin-directory")
+    monkeypatch.setenv("EDPS_TEST_DELAY", "0.3")
     directory = tmp_path / "reduction"
+    reports = []
 
     files = process_with_edps(
         [raw], directory, workflow_dir, workflow=workflow,
         pyesorex=command, recipe_dir=tmp_path / "recipes", timeout=10,
+        progress=reports.append, progress_interval=0.05,
     )
 
     assert files[0] == raw
@@ -67,16 +70,24 @@ def test_edps_runs_locally_and_returns_inputs_before_products(edps_example, tmp_
     assert next(directory.rglob("used_config.txt")).read_text() == str(directory / "pyesorex.rc")
     assert os.environ["PYESOREX_CONFIG"] == "original-config"
     assert os.environ["PYESOREX_PLUGIN_DIR"] == "original-plugin-directory"
+    assert reports[0].startswith("EDPS: associating inputs")
+    running = [line for line in reports if "running=1" in line]
+    assert len(running) >= 2  # Heartbeats continue while a job's status is unchanged.
+    assert all("running: reduce" in line for line in running)
+    assert "total=1 queued=0 running=0 completed=1 failed=0 missing=0" in reports[-1]
 
 
 def test_edps_recipe_failures_fail_the_test(edps_example, tmp_path, monkeypatch):
     workflow_dir, workflow, raw, command = edps_example
     monkeypatch.setenv("EDPS_TEST_FAIL", "1")
+    reports = []
     with pytest.raises(AssertionError, match="EDPS jobs failed"):
         process_with_edps(
             [raw], tmp_path / "failed", workflow_dir, workflow=workflow,
             pyesorex=command, recipe_dir=tmp_path / "recipes", timeout=10,
+            progress=reports.append,
         )
+    assert "completed=0 failed=1" in reports[-1]
 
 
 def test_edps_cannot_pass_without_any_jobs(edps_example, tmp_path):

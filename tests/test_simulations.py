@@ -18,7 +18,7 @@ PACKAGES = ("METIS", "ELT", "Armazones")
 
 
 @pytest.fixture(scope="session")
-def simulated_files(request, tmp_path_factory):
+def simulated_files(request, tmp_path_factory, edps_progress):
     """Execute selected scripts with their own YAML lists and output layouts."""
     if find_spec("metis_simulations") is None:
         raise pytest.UsageError("Install the simulations dependency group to run this test")
@@ -75,6 +75,7 @@ def simulated_files(request, tmp_path_factory):
                 targets=request.config.getoption("--edps-target"),
                 timeout=request.config.getoption("--edps-timeout"),
                 recipe_dir=pipeline_root / "recipes",
+                progress=edps_progress,
             )
         filenames = list(dict.fromkeys(filenames + processed))
     return filenames

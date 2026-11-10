@@ -291,6 +291,20 @@ Recipe execution uses the current environment's `pyesorex`, with a temporary
 unique `PYTEST` filenames to avoid collisions in the archive. QC plot generation
 is disabled for this test.
 
+The harness uses the EDPS library rather than its CLI, so it supplies its own
+live job summary. Counts and running task names appear on status changes and
+at least every ten seconds, even with normal pytest output capture; `-s` is not
+required. For example:
+
+```text
+EDPS [02:10] total=57 queued=41 running=1 completed=15 failed=0 missing=0; running: metis_ifu_wavecal
+```
+
+The initial message gives the recipe log directory. Individual recipe stdout
+and stderr stay in per-job `esorex.stdout` and `esorex.stderr` files, rather than
+being streamed to the terminal. Other test output keeps its normal pytest
+capture behavior.
+
 Incomplete associations, failed recipes, zero jobs, and zero FITS products fail
 the test. The temporary `edps` directory contains `application.properties`,
 `pyesorex.rc`, `submission.json`, job JSON details, and recipe stdout/stderr for

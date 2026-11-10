@@ -1,6 +1,7 @@
 """Session fixtures for an optional, disposable MetisWISE database."""
 
 import configparser
+from contextlib import nullcontext
 from http.client import HTTPConnection
 from importlib.util import find_spec
 from importlib.resources import files
@@ -111,6 +112,22 @@ def _disconnect_database():
             module.database.rollback()
         module.database.disconnect()
         profiles.remove_profile()
+
+
+@pytest.fixture(scope="session")
+def edps_progress(request):
+    """Show job summaries live without turning off capture for recipe/test logs."""
+    capture = request.config.pluginmanager.getplugin("capturemanager")
+    terminal = request.config.pluginmanager.getplugin("terminalreporter")
+
+    def report(message):
+        with capture.global_and_fixture_disabled() if capture else nullcontext():
+            if terminal:
+                terminal.write_line(message, flush=True)
+            else:
+                print(message, flush=True)
+
+    return report
 
 
 @pytest.fixture(scope="session")
