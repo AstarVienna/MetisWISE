@@ -973,8 +973,9 @@ IFU_SCI_RAW:
   do.catg: IFU_SCI_RAW
   mode: lms
   source:
-    name: simple_gal
-    kwargs: {}
+    name: calib_star
+    kwargs:
+      amplitude: 12
   properties:
     dit: 1.0
     ndit: 1
@@ -1025,8 +1026,9 @@ LM_LSS_SCI_RAW:
   do.catg: LM_LSS_SCI_RAW
   mode: lss_l
   source:
-    name: simple_gal
-    kwargs: {}
+    name: calib_star
+    kwargs:
+      amplitude: 12
   properties:
     dit: 1.0
     ndit: 1
@@ -1062,8 +1064,9 @@ N_LSS_SCI_RAW:
   do.catg: N_LSS_SCI_RAW
   mode: lss_n
   source:
-    name: simple_gal
-    kwargs: {}
+    name: calib_star
+    kwargs:
+      amplitude: 12
   properties:
     dit: 1.0
     ndit: 1

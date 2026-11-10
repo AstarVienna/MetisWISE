@@ -54,6 +54,10 @@ def pytest_addoption(parser):
         help="Local test observing block; repeat to run several (default: functionalPipeline; full set: minimalPipeline)",
     )
     parser.addoption(
+        "--simulation-profile", choices=("archive", "default"), default="archive",
+        help="ScopeSim settings: cheap archive-test settings (default) or unchanged IRDB settings",
+    )
+    parser.addoption(
         "--run-edps", action="store_true",
         help="Process simulated files with metis_wkf before ingestion (requires --run-simulations)",
     )

@@ -10,6 +10,7 @@ import pytest
 
 from edps_processing import process_with_edps
 from simulation_blocks import run_simulation_blocks
+from simulation_settings import prepare_archive_irdb
 
 
 pytestmark = [pytest.mark.postgresql, pytest.mark.simulations]
@@ -35,6 +36,10 @@ def simulated_files(request, tmp_path_factory):
     environment = os.environ.copy()
     environment.setdefault("MSIM_NCORES", "1")
     environment.setdefault("MPLBACKEND", "Agg")
+    # Each simulation worker already occupies a process; avoid multiplying
+    # its CPU threads and associated workspaces unless explicitly requested.
+    for name in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
+        environment.setdefault(name, "1")
     output_root = Path(environment.get("MSIM_OUTDIR", str(directory / "output"))).expanduser().resolve()
     environment["MSIM_OUTDIR"] = str(output_root)
     configured_yaml = environment.get("MSIM_YAML_DIR")
@@ -55,6 +60,8 @@ def simulated_files(request, tmp_path_factory):
     for relative in ("METIS/default.yaml", "ELT/ELT.yaml", "Armazones/Armazones.yaml"):
         if not (irdb / relative).is_file():
             raise pytest.UsageError(f"Missing {relative} in IRDB directory {irdb}")
+    if request.config.getoption("--simulation-profile") == "archive":
+        irdb = prepare_archive_irdb(irdb, directory / "archive-inputs")
     environment["DEFAULT_IRDB_LOCATION"] = str(irdb)
 
     filenames = run_simulation_blocks(

@@ -155,6 +155,29 @@ Python library. The YAML inputs live in `tests/simulations/YAML`; no simulator
 checkout or packaged simulation resources are needed. The runner passes
 `--noPsf` and uses full-size detectors.
 
+The repository observing YAML files use point sources for IFU and LSS science
+exposures.
+
+By default, `--simulation-profile archive` prepares temporary copies of the
+METIS optical YAML settings for fast archive tests:
+
+- PSF convolution is disabled for every source, including stars and galaxies
+  that the simulator's guarded `--noPsf` flag would normally leave unchanged.
+- IFU sky-pixel size is doubled, reducing the internal cube's spatial area by
+  about four. The detector layout, detector sizes and spectral traces are kept.
+
+The fine wavelength sampling is retained so narrow laser lines remain available
+to wavelength-calibration recipes. Detector noise, gain, linearity and FITS
+header effects remain enabled. These shortcuts deliberately sacrifice optical
+realism; they are intended to exercise reduction and archive infrastructure.
+They do not guarantee success of every scientific recipe.
+
+The original IRDB is untouched. Inspect the generated instrument settings in
+the temporary `simulations0/archive-inputs/irdb` directory, or pass
+`--simulation-profile default` to use the original IRDB settings.
+Standalone block invocations use the original settings too; the archive profile
+is applied by the pytest fixture.
+
 Two single-night sets are available:
 
 | Block | Raw exposures | Purpose |
@@ -208,6 +231,9 @@ from the directory where pytest is invoked. By default, each block uses the
 local `tests/simulations/YAML` directory, temporary output, and
 the `Agg` backend. Overrides are passed through the subprocess environment and
 do not change pytest's environment or working directory.
+`OMP_NUM_THREADS`, `OPENBLAS_NUM_THREADS` and `MKL_NUM_THREADS` default to one in
+simulation subprocesses unless already set. Full-size IFU frames still need
+substantial memory per worker, so increase `MSIM_NCORES` with care.
 
 No simulator checkout is needed. The test uses a sibling `irdb` checkout if
 present. Use `--irdb-root=/path/to/inst_pkgs` (or `DEFAULT_IRDB_LOCATION`) to select
