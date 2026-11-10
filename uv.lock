@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = ">=3.12, <3.14"
 resolution-markers = [
     "python_full_version >= '3.13'",
@@ -1289,15 +1289,15 @@ wheels = [
 
 [[package]]
 name = "metis-simulations"
-version = "20260824.post20.dev0+b7a24b3"
+version = "20260824.post28.dev0+a494c2a"
 source = { registry = "https://pip.entropynaut.com/packages/" }
 dependencies = [
     { name = "scopesim" },
     { name = "scopesim-templates" },
 ]
-sdist = { url = "https://pip.entropynaut.com/packages/metis-simulations/metis_simulations-20260824.post20.dev0%2Bb7a24b3.tar.gz" }
+sdist = { url = "https://pip.entropynaut.com/packages/metis-simulations/metis_simulations-20260824.post28.dev0%2Ba494c2a.tar.gz" }
 wheels = [
-    { url = "https://pip.entropynaut.com/packages/metis-simulations/metis_simulations-20260824.post20.dev0%2Bb7a24b3-py3-none-any.whl" },
+    { url = "https://pip.entropynaut.com/packages/metis-simulations/metis_simulations-20260824.post28.dev0%2Ba494c2a-py3-none-any.whl" },
 ]
 
 [[package]]
@@ -1379,7 +1379,7 @@ postgres = [
     { name = "pytest" },
     { name = "pytest-postgresql", specifier = ">=7" },
 ]
-simulations = [{ name = "metis-simulations", specifier = ">=20260824.post19", index = "https://pip.entropynaut.com/packages/" }]
+simulations = [{ name = "metis-simulations", specifier = ">=20260824.post27", index = "https://pip.entropynaut.com/packages/" }]
 test = [
     { name = "adari-core", index = "https://ftp.eso.org/pub/dfs/pipelines/libraries" },
     { name = "coverage" },

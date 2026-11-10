@@ -149,27 +149,73 @@ be uploaded to a hosted coverage service such as Codecov or Coveralls.
 
 ### Simulation ingestion test
 
-The opt-in simulation test executes installed `metis-simulations` block scripts
-with the current Python interpreter, passing `--noPsf` and using full-size detectors. The
-default is `simulationBlocks/ESO/imgLM.py`. The scripts select their own YAML
-inputs and output layouts; the test does not call `metis_simulations.__main__`.
+The opt-in simulation test executes observing blocks from
+`tests/simulations/simulationBlocks`, using the installed `metis-simulations`
+Python library. The YAML inputs live in `tests/simulations/YAML`; no simulator
+checkout or packaged simulation resources are needed. The runner passes
+`--noPsf` and uses full-size detectors.
+
+The repository observing YAML files use point sources for IFU and LSS science
+exposures.
+
+By default, `--simulation-profile archive` prepares temporary copies of the
+METIS optical YAML settings for fast archive tests:
+
+- PSF convolution is disabled for every source, including stars and galaxies
+  that the simulator's guarded `--noPsf` flag would normally leave unchanged.
+- IFU sky-pixel size is doubled, reducing the internal cube's spatial area by
+  about four. The detector layout, detector sizes and spectral traces are kept.
+
+The fine wavelength sampling is retained so narrow laser lines remain available
+to wavelength-calibration recipes. Detector noise, gain, linearity and FITS
+header effects remain enabled. These shortcuts deliberately sacrifice optical
+realism; they are intended to exercise reduction and archive infrastructure.
+They do not guarantee success of every scientific recipe.
+
+The original IRDB is untouched. Inspect the generated instrument settings in
+the temporary `simulations0/archive-inputs/irdb` directory, or pass
+`--simulation-profile default` to use the original IRDB settings.
+Standalone block invocations use the original settings too; the archive profile
+is applied by the pytest fixture.
+
+Two single-night sets are available:
+
+| Block | Raw exposures | Purpose |
+| --- | ---: | --- |
+| `functionalPipeline` (default) | 24 | The previously enabled LM-only simulations, for a functional setup test. |
+| `minimalPipeline` | 78 | All entries restored, including GEO, IFU, both LSS bands and chophome, for broad data-model coverage. |
+
+Both sets have explicit darks, flats and paired linearity exposures, share
+calibrations within the night, and generate static calibration prototypes once.
+Automatic `--doCalib` generation is disabled to preserve their exposure budgets.
+The blocks can also run directly:
+
+```bash
+python tests/simulations/simulationBlocks/functionalPipeline.py --noPsf
+```
+
+Use `minimalPipeline.py` for the full set. Output is written below
+`MSIM_OUTDIR/<block>` (`output/<block>` for standalone runs without the variable).
+pytest defaults `MSIM_OUTDIR` to its temporary simulation output directory.
 
 ```bash
 uv sync --group simulations --group postgres
 uv run --no-sync python -m pytest --run-postgresql --run-simulations tests/test_simulations.py -v
 ```
 
-Repeat `--simulation-block` to run an arbitrary set of installed blocks in the
-specified order, then ingest their combined output in one database test:
+Select the larger set explicitly:
 
 ```bash
 uv run --no-sync python -m pytest --run-postgresql --run-simulations \
-    --simulation-block ESO/imgLM --simulation-block ESO/imgN \
+    --simulation-block minimalPipeline \
     tests/test_simulations.py -v
 ```
 
-Names are relative to the package's `simulationBlocks` directory, with or without
-`.py`. Each block must create or update at least one FITS file. The test discovers
+Names are relative to `tests/simulations/simulationBlocks`, with or without
+`.py`. `--simulation-block` can be repeated for additional custom blocks. Run
+the functional and full sets separately because they overlap and contain static
+files with the same names. Each block must create or update at least one FITS
+file. The test discovers
 those files below the output directory, ignoring untouched files from earlier
 runs, so adding another block does not require hardcoded YAML lists or output
 paths. It ingests raw and processed data, uploads the FITS files to the temporary
@@ -182,9 +228,12 @@ that only want to commit metadata without uploading files.
 one. `MSIM_YAML_DIR`, `MSIM_OUTDIR`, and `MPLBACKEND` override the input directory,
 output directory, and plotting backend. Relative input/output paths are resolved
 from the directory where pytest is invoked. By default, each block uses the
-bundled YAML directory matching its group (e.g. `YAML/ESO`), temporary output, and
+local `tests/simulations/YAML` directory, temporary output, and
 the `Agg` backend. Overrides are passed through the subprocess environment and
 do not change pytest's environment or working directory.
+`OMP_NUM_THREADS`, `OPENBLAS_NUM_THREADS` and `MKL_NUM_THREADS` default to one in
+simulation subprocesses unless already set. Full-size IFU frames still need
+substantial memory per worker, so increase `MSIM_NCORES` with care.
 
 No simulator checkout is needed. The test uses a sibling `irdb` checkout if
 present. Use `--irdb-root=/path/to/inst_pkgs` (or `DEFAULT_IRDB_LOCATION`) to select
@@ -200,6 +249,68 @@ skip the simulation ingestion test unless both `--run-simulations` and
 `--run-postgresql` are supplied. The small script-runner tests run without IRDB,
 ScopeSim, or a database.
 
+### Ingestion-only dataset
+
+`tests/data/minimalPipeline.json` is a compact snapshot of 209 simulated and
+processed FITS files. It was converted from a completed full run: 6.40 GB of
+FITS files becomes a 4.77 MB plain JSON fixture (about 189 KB with zlib
+compression, before Git's delta compression). It contains the original
+filenames and HDU headers; image pixels are represented as zeros and tables
+have zero rows while retaining their column definitions.
+No simulation or recipe execution is required to use it.
+The JSON is pretty-printed, with each header stored as a list of 80-character
+physical FITS cards, including long-value `CONTINUE` cards and the `END` card.
+Inspect it directly with `less tests/data/minimalPipeline.json`. Git compresses
+stored objects, so the repository keeps readable JSON rather than a gzip file.
+The converter still supports `.json.gz` outputs when explicitly requested.
+
+Run its metadata-ingestion test against the temporary PostgreSQL database:
+
+```bash
+uv sync --group postgres
+uv run --no-sync python -m pytest --run-postgresql \
+    tests/test_ingestion_dataset.py --ingestion-dataset
+```
+
+`--ingestion-dataset=/path/to/another.json` selects a different snapshot.
+This test uses `ingest_file(..., store=False)`, so it tests the data model and
+provenance without uploading gigabytes of zero pixels. The separate dataserver
+test covers storage/retrieval with real nonzero FITS data.
+
+Regenerate the fixture after another complete simulation/EDPS run:
+
+```bash
+uv run --no-sync python -m metiswise.tools.ingestion_dataset create \
+    /path/to/simulations0 tests/data/minimalPipeline.json --overwrite
+```
+
+The converter reads archive-classified, uncompressed FITS files recursively,
+excluding linked IRDB assets. It records the source creation order (file mtimes)
+so parent files can be ingested before their products. It never changes the
+source files. Existing fixtures are protected unless `--overwrite` is specified;
+replacements are atomic. Repeated conversions of unchanged inputs are identical.
+
+To inspect or ingest the reconstructed files independently:
+
+```bash
+uv run --no-sync python -m metiswise.tools.ingestion_dataset restore \
+    tests/data/minimalPipeline.json /tmp/metis-ingestion-fits
+```
+
+Restoration preserves HDU structure, image dimensions, pixel types, header-card
+order, duplicate cards and table column definitions. Table `NAXIS2` and `PCOUNT`
+are set to zero; `THEAP`, when present, is also reset to zero. No table payloads
+or base64 blobs are stored. The restored files retain their large
+logical sizes, but sparse zero-image regions occupy no blocks on supporting
+filesystems. Nonzero FITS
+scaling offsets are handled so restored pixels still have physical value zero.
+The restore command refuses to overwrite files.
+
+`CHECKSUM`/`DATASUM` cards are removed from changed image and table HDUs. Other metadata,
+including ESO `DATAMD5` and recipe provenance hashes, remains the original run's
+snapshot: those hashes describe the original data. These fixtures are for
+ingestion, not scientific reduction or validation of the original data checksums.
+
 ### EDPS processing and ingestion
 
 Add `--run-edps` to process the simulated files through `metis.metis_wkf` before
@@ -207,13 +318,12 @@ ingestion:
 
 ```bash
 uv run --no-sync python -m pytest --run-postgresql --run-simulations --run-edps \
-    --simulation-block ESO/imgLM tests/test_simulations.py -v
+    tests/test_simulations.py -v
 ```
 
-With `--run-edps`, each selected simulation block receives `--doCalib=2` and
-`--doStatic`, generating two darks/flats per required setup and the static
-calibration prototypes alongside the exposures. These files are passed to EDPS
-and ingested along with the simulated science data and processing products.
+The selected set's explicit calibrations and static prototypes are passed to
+EDPS and ingested with the science data and processing products. The default
+set covers LM imaging; use `--simulation-block minimalPipeline` for the full set.
 
 The workflow and recipes come from the installed `pymetis` package. Supply any
 additional calibration data required by the workflow with `--edps-input`:
@@ -225,11 +335,16 @@ uv run --no-sync python -m pytest --run-postgresql --run-simulations --run-edps 
 ```
 
 Repeat `--edps-input` to provide additional calibration files or directories, or
-generate them using additional `--simulation-block` options. The automatic
-calibrations cover darks, flats, and static files; other required inputs, such as
-detector-linearity exposures, need their own simulation blocks or files.
+generate them using additional local `--simulation-block` options.
 Repeat `--edps-target` to select tasks; omit it to use the workflow's
-default targets. `--edps-timeout` controls the wait for jobs (default 600 seconds).
+default targets. `--edps-timeout` sets the budget for the entire EDPS processing
+phase (default 3600 seconds), separately from simulation time. On timeout the harness
+saves job snapshots, cancels queued work and lets an active recipe finish before
+reporting the timeout. This graceful shutdown avoids EDPS's child-process scan,
+which can raise `psutil.ZombieProcess` and hide the original timeout. The budget
+is therefore a soft limit; shutdown can take longer while the active recipe
+finishes. Increase it for slower machines or larger runs, for example
+`--edps-timeout 7200`.
 
 The test constructs `EDPS` through its Python API with an in-memory bookkeeping
 repository. It starts no HTTP server and reads no personal EDPS configuration.
@@ -237,6 +352,20 @@ Recipe execution uses the current environment's `pyesorex`, with a temporary
 `PYESOREX_CONFIG` pointing to the installed METIS recipe directory. Products get
 unique `PYTEST` filenames to avoid collisions in the archive. QC plot generation
 is disabled for this test.
+
+The harness uses the EDPS library rather than its CLI, so it supplies its own
+live job summary. Counts and running task names appear on status changes and
+at least every ten seconds, even with normal pytest output capture; `-s` is not
+required. For example:
+
+```text
+EDPS [02:10] total=57 queued=41 running=1 completed=15 failed=0 missing=0; running: metis_ifu_wavecal
+```
+
+The initial message gives the recipe log directory. Individual recipe stdout
+and stderr stay in per-job `esorex.stdout` and `esorex.stderr` files, rather than
+being streamed to the terminal. Other test output keeps its normal pytest
+capture behavior.
 
 Incomplete associations, failed recipes, zero jobs, and zero FITS products fail
 the test. The temporary `edps` directory contains `application.properties`,

@@ -1,4 +1,4 @@
-"""Execute installed block scripts and find the FITS files they write."""
+"""Execute local observing blocks and find the FITS files they write."""
 
 import subprocess
 import sys
@@ -6,13 +6,14 @@ import sys
 import pytest
 
 
-def run_simulation_blocks(package_root, blocks, output_root, directory, environment, configured_yaml=None,
+def run_simulation_blocks(resource_root, blocks, output_root, directory, environment, configured_yaml=None,
                           *, extra_args=()):
     filenames = set()
-    script_root = package_root / "simulationBlocks"
+    script_root = resource_root / "simulationBlocks"
     scripts = {
         path.relative_to(script_root).with_suffix("").as_posix(): path
         for path in script_root.rglob("*.py")
+        if not path.name.startswith("_")
     }
     # Validate all selections before running any potentially expensive block.
     selected = []
@@ -20,11 +21,11 @@ def run_simulation_blocks(package_root, blocks, output_root, directory, environm
         name = block.removesuffix(".py")
         if name not in scripts:
             raise pytest.UsageError(
-                f"Simulation block {block!r} is not in the installed metis-simulations package"
+                f"Simulation block {block!r} is not in {script_root}"
             )
         selected.append(scripts[name])
     for script in selected:
-        yaml_root = package_root / "YAML" / script.parent.relative_to(script_root)
+        yaml_root = resource_root / "YAML" / script.parent.relative_to(script_root)
         block_environment = environment.copy()
         block_environment["MSIM_YAML_DIR"] = configured_yaml if configured_yaml is not None else str(yaml_root)
         before = {path: path.stat().st_mtime_ns for path in output_root.rglob("*.fits")}

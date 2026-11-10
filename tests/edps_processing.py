@@ -1,6 +1,7 @@
 """Run an EDPS workflow in process, with recipes executed through PyEsoRex."""
 
 import configparser
+from collections import Counter
 from pathlib import Path
 import shutil
 import sys
@@ -11,7 +12,8 @@ import pytest
 
 
 def process_with_edps(inputs, directory, workflow_dir, *, workflow="metis.metis_wkf",
-                      targets=None, timeout=600, pyesorex=None, recipe_dir=None):
+                      targets=None, timeout=3600, pyesorex=None, recipe_dir=None,
+                      progress=None, progress_interval=10):
     """Return inputs and products in dependency order for archive ingestion.
 
     EDPS manages its scheduler and repository directly here; no HTTP server or
@@ -63,6 +65,8 @@ def process_with_edps(inputs, directory, workflow_dir, *, workflow="metis.metis_
 
         engine = EDPS(configuration, {workflow: str(workflow_dir)})
         try:
+            if progress:
+                progress(f"EDPS: associating inputs for {workflow}; recipe logs: {directory / 'jobs'}")
             response = engine.process_data(ProcessingRequest(
                 workflow=workflow, inputs=[str(Path(path).resolve()) for path in inputs],
                 targets=targets,
@@ -86,21 +90,52 @@ def process_with_edps(inputs, directory, workflow_dir, *, workflow="metis.metis_
                 )
             assert response.jobs, f"EDPS generated no jobs for {workflow}; see {submission}"
 
-            deadline = time.monotonic() + timeout
+            started = time.monotonic()
+            deadline = started + timeout
+            last_report = started - progress_interval
+            previous_statuses = None
             job_ids = [UUID(job.job_id) for job in response.jobs]
             terminal = {ProcessingJobStatus.COMPLETED, ProcessingJobStatus.FAILED, ProcessingJobStatus.MISSING}
             while True:
                 statuses = [engine.get_job_status(job_id).status for job_id in job_ids]
+                now = time.monotonic()
+                if progress and (statuses != previous_statuses or now - last_report >= progress_interval):
+                    counts = Counter(statuses)
+                    running = [job.task_name for job, status in zip(response.jobs, statuses)
+                               if status == ProcessingJobStatus.RUNNING]
+                    elapsed = int(now - started)
+                    message = (
+                        f"EDPS [{elapsed // 60:02d}:{elapsed % 60:02d}] total={len(job_ids)} "
+                        f"queued={counts[ProcessingJobStatus.CREATED]} "
+                        f"running={counts[ProcessingJobStatus.RUNNING]} "
+                        f"completed={counts[ProcessingJobStatus.COMPLETED]} "
+                        f"failed={counts[ProcessingJobStatus.FAILED]} "
+                        f"missing={counts[ProcessingJobStatus.MISSING]}"
+                    )
+                    if running:
+                        message += "; running: " + ", ".join(running)
+                    progress(message)
+                    previous_statuses, last_report = statuses, now
                 if all(status in terminal for status in statuses):
                     break
-                if time.monotonic() >= deadline:
-                    engine.halt_executions()
-                    raise AssertionError(f"EDPS exceeded {timeout}s; see {directory}")
+                if now >= deadline:
+                    jobs = _save_job_details(engine, job_ids, directory)
+                    pending = [job.configuration.task_name for job in jobs
+                               if job.status not in terminal]
+                    # Stop queued work, letting an active recipe finish. EDPS's
+                    # terminate_running=True scans all child processes and does
+                    # not handle ZombieProcess/NoSuchProcess races. Its public
+                    # graceful-stop path avoids that scan and drains the queue.
+                    if progress:
+                        progress(f"EDPS: exceeded {timeout}s; cancelling queued jobs and waiting for active recipes")
+                    engine.halt_executions(terminate_running=False)
+                    raise AssertionError(
+                        f"EDPS exceeded {timeout}s; unfinished tasks at the deadline: {pending}. "
+                        f"Increase --edps-timeout for a longer run. Job snapshots and recipe logs: {directory}"
+                    )
                 time.sleep(0.1)
 
-            jobs = [engine.get_job_details(job_id) for job_id in job_ids]
-            for job in jobs:
-                (directory / f"job-{job.configuration.job_id}.json").write_text(job.model_dump_json(indent=2))
+            jobs = _save_job_details(engine, job_ids, directory)
             failed = [job for job in jobs if job.status != ProcessingJobStatus.COMPLETED]
             assert not failed, (
                 f"EDPS jobs failed: {[job.configuration.task_name for job in failed]}; "
@@ -123,3 +158,11 @@ def process_with_edps(inputs, directory, workflow_dir, *, workflow="metis.metis_
             return list(ordered)
         finally:
             engine.shutdown()
+
+
+def _save_job_details(engine, job_ids, directory):
+    """Preserve the state before cancellation as well as after completed runs."""
+    jobs = [engine.get_job_details(job_id) for job_id in job_ids]
+    for job in jobs:
+        (directory / f"job-{job.configuration.job_id}.json").write_text(job.model_dump_json(indent=2))
+    return jobs

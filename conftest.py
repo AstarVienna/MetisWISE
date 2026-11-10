@@ -1,6 +1,7 @@
 """Session fixtures for an optional, disposable MetisWISE database."""
 
 import configparser
+from contextlib import nullcontext
 from http.client import HTTPConnection
 from importlib.util import find_spec
 from importlib.resources import files
@@ -38,6 +39,11 @@ if factories is not None:
 
 def pytest_addoption(parser):
     parser.addoption(
+        "--ingestion-dataset", nargs="?", default=None,
+        const=str(ROOT / "tests/data/minimalPipeline.json"),
+        help="Ingest a compact FITS fixture without simulation/EDPS; optional path (requires --run-postgresql)",
+    )
+    parser.addoption(
         "--run-postgresql",
         action="store_true",
         help="Run database tests against a temporary local PostgreSQL server",
@@ -51,7 +57,11 @@ def pytest_addoption(parser):
         "--simulation-block",
         action="append",
         default=None,
-        help="Installed simulation block to run, e.g. ESO/imgLM; repeat to run several (default: ESO/imgLM)",
+        help="Local test observing block; repeat to run several (default: functionalPipeline; full set: minimalPipeline)",
+    )
+    parser.addoption(
+        "--simulation-profile", choices=("archive", "default"), default="archive",
+        help="ScopeSim settings: cheap archive-test settings (default) or unchanged IRDB settings",
     )
     parser.addoption(
         "--run-edps", action="store_true",
@@ -66,8 +76,8 @@ def pytest_addoption(parser):
         help="Limit metis_wkf to a named task; may be repeated (default: workflow targets)",
     )
     parser.addoption(
-        "--edps-timeout", type=float, default=600,
-        help="Maximum time in seconds to wait for EDPS jobs (default: 600)",
+        "--edps-timeout", type=float, default=3600,
+        help="Time budget in seconds for EDPS jobs (default: 3600); active recipes finish on timeout",
     )
     parser.addoption(
         "--irdb-root",
@@ -77,6 +87,8 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
+    if config.getoption("--ingestion-dataset") and not config.getoption("--run-postgresql"):
+        raise pytest.UsageError("--ingestion-dataset also requires --run-postgresql")
     if config.getoption("--run-edps") and not config.getoption("--run-simulations"):
         raise pytest.UsageError("--run-edps also requires --run-simulations and --run-postgresql")
     if config.getoption("--run-simulations") and not config.getoption("--run-postgresql"):
@@ -84,6 +96,11 @@ def pytest_configure(config):
 
 
 def pytest_collection_modifyitems(config, items):
+    if not config.getoption("--ingestion-dataset"):
+        skip = pytest.mark.skip(reason="requires --ingestion-dataset")
+        for item in items:
+            if "ingestion_dataset" in item.keywords:
+                item.add_marker(skip)
     if not config.getoption("--run-postgresql"):
         skip = pytest.mark.skip(reason="requires --run-postgresql")
         for item in items:
@@ -107,6 +124,22 @@ def _disconnect_database():
             module.database.rollback()
         module.database.disconnect()
         profiles.remove_profile()
+
+
+@pytest.fixture(scope="session")
+def edps_progress(request):
+    """Show job summaries live without turning off capture for recipe/test logs."""
+    capture = request.config.pluginmanager.getplugin("capturemanager")
+    terminal = request.config.pluginmanager.getplugin("terminalreporter")
+
+    def report(message):
+        with capture.global_and_fixture_disabled() if capture else nullcontext():
+            if terminal:
+                terminal.write_line(message, flush=True)
+            else:
+                print(message, flush=True)
+
+    return report
 
 
 @pytest.fixture(scope="session")
