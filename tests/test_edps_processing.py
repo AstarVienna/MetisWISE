@@ -31,12 +31,13 @@ def edps_example(tmp_path):
     command = tmp_path / "pyesorex"
     command.write_text(
         f"#!{sys.executable}\n"
-        "import json, os, sys\n"
+        "import json, os, sys, time\n"
         "from pathlib import Path\n"
         "from astropy.io import fits\n"
         "Path('used_config.txt').write_text(os.environ['PYESOREX_CONFIG'])\n"
         "assert 'PYESOREX_PLUGIN_DIR' not in os.environ\n"
         "if os.environ.get('EDPS_TEST_FAIL'): raise SystemExit(1)\n"
+        "time.sleep(float(os.environ.get('EDPS_TEST_DELAY', '0')))\n"
         "product = Path('product.fits').resolve()\n"
         "header = fits.Header({'INSTRUME': 'TEST', 'HIERARCH ESO PRO CATG': 'TEST_PRODUCT'})\n"
         "fits.PrimaryHDU(header=header).writeto(product)\n"
@@ -101,3 +102,38 @@ def test_edps_reports_missing_calibration_associations(edps_example, tmp_path):
             [raw], tmp_path / "incomplete", workflow_dir, workflow=workflow,
             pyesorex=command, timeout=10,
         )
+
+
+def test_edps_timeout_preserves_diagnostics_and_avoids_zombie_process_scan(edps_example, tmp_path, monkeypatch):
+    import json
+
+    from edps.EDPS import EDPS
+    import psutil
+
+    workflow_dir, workflow, raw, command = edps_example
+    monkeypatch.setenv("EDPS_TEST_DELAY", "0.3")
+    original_halt = EDPS.halt_executions
+    calls = []
+
+    def halt(engine, terminate_running=True):
+        calls.append(terminate_running)
+        if terminate_running:
+            # Reproduce the exception thrown by EDPS's child-process scan.
+            raise psutil.ZombieProcess(12345)
+        return original_halt(engine, terminate_running=False)
+
+    monkeypatch.setattr(EDPS, "halt_executions", halt)
+    directory = tmp_path / "timeout"
+    with pytest.raises(AssertionError, match=r"EDPS exceeded 0.01s.*reduce.*--edps-timeout"):
+        process_with_edps(
+            [raw], directory, workflow_dir, workflow=workflow,
+            pyesorex=command, recipe_dir=tmp_path / "recipes", timeout=0.01,
+        )
+
+    assert calls == [False]
+    snapshots = list(directory.glob("job-*.json"))
+    assert len(snapshots) == 1
+    assert json.loads(snapshots[0].read_text())["configuration"]["task_name"] == "reduce"
+    # Graceful timeout waits for the active recipe; teardown leaves no worker
+    # running with our temporary environment or workflow configuration.
+    assert list(directory.rglob("products.json"))

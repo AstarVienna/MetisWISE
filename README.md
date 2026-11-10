@@ -275,7 +275,14 @@ uv run --no-sync python -m pytest --run-postgresql --run-simulations --run-edps 
 Repeat `--edps-input` to provide additional calibration files or directories, or
 generate them using additional local `--simulation-block` options.
 Repeat `--edps-target` to select tasks; omit it to use the workflow's
-default targets. `--edps-timeout` controls the wait for jobs (default 600 seconds).
+default targets. `--edps-timeout` sets the budget for the entire EDPS processing
+phase (default 3600 seconds), separately from simulation time. On timeout the harness
+saves job snapshots, cancels queued work and lets an active recipe finish before
+reporting the timeout. This graceful shutdown avoids EDPS's child-process scan,
+which can raise `psutil.ZombieProcess` and hide the original timeout. The budget
+is therefore a soft limit; shutdown can take longer while the active recipe
+finishes. Increase it for slower machines or larger runs, for example
+`--edps-timeout 7200`.
 
 The test constructs `EDPS` through its Python API with an in-memory bookkeeping
 repository. It starts no HTTP server and reads no personal EDPS configuration.

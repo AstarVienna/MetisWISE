@@ -70,8 +70,8 @@ def pytest_addoption(parser):
         help="Limit metis_wkf to a named task; may be repeated (default: workflow targets)",
     )
     parser.addoption(
-        "--edps-timeout", type=float, default=600,
-        help="Maximum time in seconds to wait for EDPS jobs (default: 600)",
+        "--edps-timeout", type=float, default=3600,
+        help="Time budget in seconds for EDPS jobs (default: 3600); active recipes finish on timeout",
     )
     parser.addoption(
         "--irdb-root",
