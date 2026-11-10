@@ -72,6 +72,7 @@ explicit = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = [
+    "ingestion_dataset: ingest a compact FITS fixture without running simulations or EDPS",
     "postgresql: integration tests requiring a temporary local PostgreSQL server",
     "simulations: real ScopeSim simulations requiring instrument data and potentially network access",
 ]

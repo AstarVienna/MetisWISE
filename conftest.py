@@ -39,6 +39,11 @@ if factories is not None:
 
 def pytest_addoption(parser):
     parser.addoption(
+        "--ingestion-dataset", nargs="?", default=None,
+        const=str(ROOT / "tests/data/minimalPipeline.json"),
+        help="Ingest a compact FITS fixture without simulation/EDPS; optional path (requires --run-postgresql)",
+    )
+    parser.addoption(
         "--run-postgresql",
         action="store_true",
         help="Run database tests against a temporary local PostgreSQL server",
@@ -82,6 +87,8 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
+    if config.getoption("--ingestion-dataset") and not config.getoption("--run-postgresql"):
+        raise pytest.UsageError("--ingestion-dataset also requires --run-postgresql")
     if config.getoption("--run-edps") and not config.getoption("--run-simulations"):
         raise pytest.UsageError("--run-edps also requires --run-simulations and --run-postgresql")
     if config.getoption("--run-simulations") and not config.getoption("--run-postgresql"):
@@ -89,6 +96,11 @@ def pytest_configure(config):
 
 
 def pytest_collection_modifyitems(config, items):
+    if not config.getoption("--ingestion-dataset"):
+        skip = pytest.mark.skip(reason="requires --ingestion-dataset")
+        for item in items:
+            if "ingestion_dataset" in item.keywords:
+                item.add_marker(skip)
     if not config.getoption("--run-postgresql"):
         skip = pytest.mark.skip(reason="requires --run-postgresql")
         for item in items:

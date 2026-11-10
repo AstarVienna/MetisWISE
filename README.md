@@ -249,6 +249,68 @@ skip the simulation ingestion test unless both `--run-simulations` and
 `--run-postgresql` are supplied. The small script-runner tests run without IRDB,
 ScopeSim, or a database.
 
+### Ingestion-only dataset
+
+`tests/data/minimalPipeline.json` is a compact snapshot of 209 simulated and
+processed FITS files. It was converted from a completed full run: 6.40 GB of
+FITS files becomes a 4.77 MB plain JSON fixture (about 189 KB with zlib
+compression, before Git's delta compression). It contains the original
+filenames and HDU headers; image pixels are represented as zeros and tables
+have zero rows while retaining their column definitions.
+No simulation or recipe execution is required to use it.
+The JSON is pretty-printed, with each header stored as a list of 80-character
+physical FITS cards, including long-value `CONTINUE` cards and the `END` card.
+Inspect it directly with `less tests/data/minimalPipeline.json`. Git compresses
+stored objects, so the repository keeps readable JSON rather than a gzip file.
+The converter still supports `.json.gz` outputs when explicitly requested.
+
+Run its metadata-ingestion test against the temporary PostgreSQL database:
+
+```bash
+uv sync --group postgres
+uv run --no-sync python -m pytest --run-postgresql \
+    tests/test_ingestion_dataset.py --ingestion-dataset
+```
+
+`--ingestion-dataset=/path/to/another.json` selects a different snapshot.
+This test uses `ingest_file(..., store=False)`, so it tests the data model and
+provenance without uploading gigabytes of zero pixels. The separate dataserver
+test covers storage/retrieval with real nonzero FITS data.
+
+Regenerate the fixture after another complete simulation/EDPS run:
+
+```bash
+uv run --no-sync python -m metiswise.tools.ingestion_dataset create \
+    /path/to/simulations0 tests/data/minimalPipeline.json --overwrite
+```
+
+The converter reads archive-classified, uncompressed FITS files recursively,
+excluding linked IRDB assets. It records the source creation order (file mtimes)
+so parent files can be ingested before their products. It never changes the
+source files. Existing fixtures are protected unless `--overwrite` is specified;
+replacements are atomic. Repeated conversions of unchanged inputs are identical.
+
+To inspect or ingest the reconstructed files independently:
+
+```bash
+uv run --no-sync python -m metiswise.tools.ingestion_dataset restore \
+    tests/data/minimalPipeline.json /tmp/metis-ingestion-fits
+```
+
+Restoration preserves HDU structure, image dimensions, pixel types, header-card
+order, duplicate cards and table column definitions. Table `NAXIS2` and `PCOUNT`
+are set to zero; `THEAP`, when present, is also reset to zero. No table payloads
+or base64 blobs are stored. The restored files retain their large
+logical sizes, but sparse zero-image regions occupy no blocks on supporting
+filesystems. Nonzero FITS
+scaling offsets are handled so restored pixels still have physical value zero.
+The restore command refuses to overwrite files.
+
+`CHECKSUM`/`DATASUM` cards are removed from changed image and table HDUs. Other metadata,
+including ESO `DATAMD5` and recipe provenance hashes, remains the original run's
+snapshot: those hashes describe the original data. These fixtures are for
+ingestion, not scientific reduction or validation of the original data checksums.
+
 ### EDPS processing and ingestion
 
 Add `--run-edps` to process the simulated files through `metis.metis_wkf` before
