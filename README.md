@@ -4,6 +4,35 @@ MetisWISE
 MetisWISE is the client software for the METIS AIT archive.
 It contains a Python library, called `metiswise`, to connect to the METIS AIT database and to retrieve data from the METIS AIT data server.
 
+### Exporting persistent classes
+
+With the usual archive database configured, any `DataItem` subclass can export
+its persistent schema as Python source:
+
+```python
+from metiswise.main.raw import LM_IMAGE_STD_RAW
+
+source = LM_IMAGE_STD_RAW.to_python()
+path = LM_IMAGE_STD_RAW.write_python()  # generated/LM_IMAGE_STD_RAW.py under cwd
+LM_IMAGE_STD_RAW.write_python("generated/raws/LM_IMAGE_STD_RAW.py")
+```
+
+Keep these generated modules in `generated/`, separate from handwritten code in
+`metiswise/main/`. The exporter creates parent directories and refuses to replace
+an existing file unless `overwrite=True` is passed. It returns a `pathlib.Path`.
+The underlying helpers are `class_source` and `write_class` in
+`metiswise.tools.class_source`; the implementation stays local to MetisWISE.
+
+Exports contain the class docstring, imports for its direct bases (including
+mixins), and newly declared persistent fields with their descriptions, types
+and defaults. Inherited fields come from the bases. Methods and ordinary class
+attributes, including category lookup dictionaries, are not exported. Base and
+linked classes must remain importable; this exports one schema, not an entire
+dependency tree. Unsupported defaults or declarations raise `ValueError` before
+writing. Importing the result registers its persistent class with common, so
+use it as an alternative definition in a configured archive environment and
+avoid loading two definitions of the same class in one session.
+
 Installation
 ------------
 
